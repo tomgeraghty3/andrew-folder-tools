@@ -1,0 +1,6 @@
+app:
+  version: @project.version@
+  subDirectoryNames: TBC, Otherdir
+  directoryToFilenameFilter:
+    name:
+    name2:
