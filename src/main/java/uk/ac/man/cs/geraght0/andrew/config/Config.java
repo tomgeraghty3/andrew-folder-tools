@@ -17,7 +17,6 @@ import org.apache.commons.io.FileUtils;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.util.DefaultPropertiesPersister;
-import uk.ac.man.cs.geraght0.andrew.model.DirGroupOption;
 
 @Data
 @Slf4j
@@ -36,7 +35,6 @@ public class Config {
   //Config
   private String lastInputDirectory;
   private String lastOutputDirectory;
-  private DirGroupOption lastDirGroupOption;
   private String lastExtension;
   private String version;
 
