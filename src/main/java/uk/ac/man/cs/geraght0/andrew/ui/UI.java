@@ -35,7 +35,7 @@ import org.springframework.util.ResourceUtils;
 import uk.ac.man.cs.geraght0.andrew.AndrewFolderToolApplication;
 import uk.ac.man.cs.geraght0.andrew.config.Config;
 import uk.ac.man.cs.geraght0.andrew.service.Backend;
-import uk.ac.man.cs.geraght0.andrew.ui.view.AbsUiModeView;
+import uk.ac.man.cs.geraght0.andrew.ui.view.AbsView;
 import uk.ac.man.cs.geraght0.andrew.ui.view.UiMode;
 
 @Slf4j
@@ -80,7 +80,7 @@ public class UI extends Application {
     Scene scene = generateScene();
 
     //Populate with default view
-    AbsUiModeView view = PRE_SELECTED.createView(this);
+    AbsView view = PRE_SELECTED.createView(this);
     populateView(view);
 
     URL resource = ResourceUtils.getURL(String.format("%sstyle.css", CLASSPATH_URL_PREFIX));
@@ -149,13 +149,13 @@ public class UI extends Application {
                  UiMode mode = map.get(newValue);
                  UiMode old = map.get(oldValue);
                  log.info("Changing view to mode {} from {}", mode, old);
-                 AbsUiModeView view = mode.createView(this);
+                 AbsView view = mode.createView(this);
                  populateView(view);
                });
     menuBar = new MenuBar(menu);
   }
 
-  private void populateView(final AbsUiModeView view) {
+  private void populateView(final AbsView view) {
     root.getChildren()
         .clear();
     root.getChildren()

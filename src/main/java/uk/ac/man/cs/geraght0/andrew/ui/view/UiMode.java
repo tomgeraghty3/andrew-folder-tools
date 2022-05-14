@@ -14,18 +14,18 @@ public enum UiMode {
   BLANK("Blank test", BlankView::new);
 
   private final String displayName;
-  private final Function<UI, AbsUiModeView> funcToCreateView;
+  private final Function<UI, AbsView> funcToCreateView;
   UiMode(final String displayName,
-         final Function<UI, AbsUiModeView> funcToCreateView) {
+         final Function<UI, AbsView> funcToCreateView) {
     this.displayName = displayName;
     this.funcToCreateView = funcToCreateView;
   }
 
-  public AbsUiModeView createView(final UI ui) {
+  public AbsView createView(final UI ui) {
     return funcToCreateView.apply(ui);
   }
 
-  public static class BlankView extends AbsUiModeView {
+  public static class BlankView extends AbsView {
 
     public BlankView(final UI ui) {
       super(ui);

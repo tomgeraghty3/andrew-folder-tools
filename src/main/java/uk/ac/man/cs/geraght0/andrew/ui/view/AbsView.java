@@ -28,14 +28,14 @@ import uk.ac.man.cs.geraght0.andrew.ui.UiHelpers;
 import uk.ac.man.cs.geraght0.andrew.ui.components.WrapperComp;
 
 @Slf4j
-public abstract class AbsUiModeView extends GridPane {
+public abstract class AbsView extends GridPane {
 
   private final UI parent;
   //  protected final StackPane parent;
   protected int currentRow;
   private final ProgressBar progressBar;
 
-  public AbsUiModeView(final UI ui) {
+  public AbsView(final UI ui) {
     this.parent = ui;
     configure(getRootPane());
     build();
