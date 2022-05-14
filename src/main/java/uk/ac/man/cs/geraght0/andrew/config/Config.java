@@ -1,19 +1,19 @@
 package uk.ac.man.cs.geraght0.andrew.config;
 
-import static uk.ac.man.cs.geraght0.andrew.config.Config.PREFIX;
+import static uk.ac.man.cs.geraght0.andrew.constants.ConfigConstants.PREFIX;
+import static uk.ac.man.cs.geraght0.andrew.constants.ConfigConstants.PROPERTIES_FILE;
 
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.lang.reflect.Method;
-import java.util.Arrays;
-import java.util.List;
+import java.util.LinkedHashMap;
+import java.util.Map;
 import java.util.Properties;
-import java.util.stream.Collectors;
+import java.util.Set;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
-import net.harawata.appdirs.AppDirsFactory;
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.util.DefaultPropertiesPersister;
@@ -23,43 +23,50 @@ import org.springframework.util.DefaultPropertiesPersister;
 @Configuration
 @ConfigurationProperties(PREFIX)
 public class Config {
-  //Constants
-  static final String PREFIX = "folder-tool";
-  private static final String PROP_FILE_NAME = String.format("%s.properties", PREFIX);
-  private static final String APP_AUTHOR = "GERAGHT0";
-  private static final String APP_NAME = "ANDREW_TOOL";
-  private static final String VERSION = "1";
-  public static final String PROPERTIES_FILE_LOC = String.format("%s\\%s", AppDirsFactory.getInstance()
-                                                                                     .getSiteDataDir(APP_NAME, VERSION, APP_AUTHOR), PROP_FILE_NAME);
-  public static final File PROPERTIES_FILE = new File(Config.PROPERTIES_FILE_LOC);
+
   //Config
-  private String lastInputDirectory;
-  private String lastOutputDirectory;
-  private String lastExtension;
-  private String version;
+  private static final Map<String, String> DIRECTORY_TO_FILENAME_FILTER;
+  private boolean skipVersionUpdateCheck;
+  private boolean disallowOverwrite;
+  private boolean disableInfoPopupBetweenViews;
+  private String lastDirsForFileOrganise;
+  private String lastDirForDirCreate;
+  private String lastDirNamesForDirCreate;
+
+  static {
+    DIRECTORY_TO_FILENAME_FILTER = new LinkedHashMap<>();
+ /*
+    DVR001 - paid/o/videos (5 videos that don’t have _preview in the name)  .mp4
+           - tour/o/videos (5 videos that have _preview in the name)        .mp4
+            artwork (artwork.jpg)
+            gallery (6 gallery images)                 .jpg,.jpeg
+     */
+    DIRECTORY_TO_FILENAME_FILTER.put("tour/o/videos", "_preview.mp4");
+    DIRECTORY_TO_FILENAME_FILTER.put("paid/o/videos", ".mp4");
+    DIRECTORY_TO_FILENAME_FILTER.put("artwork", "artwork.jpg");
+    DIRECTORY_TO_FILENAME_FILTER.put("gallery", ".jpg");
+  }
+
+  public Set<String> deduceSubDirectoryNames() {
+    return DIRECTORY_TO_FILENAME_FILTER.keySet();
+  }
 
   public void save() {
     try (FileOutputStream out = createWriterToFile()) {
       // create and set properties into properties object
       Properties props = new Properties();
-      final String identifier = "get";
-      List<Method> methods = Arrays.stream(Config.class.getDeclaredMethods())
-                                   .filter(f -> f.getName()
-                                                 .startsWith(identifier))
-                                   .collect(Collectors.toList());
-      for (Method method : methods) {
-        char[] c = method.getName()
-                         .replace(identifier, "")
-                         .toCharArray();
-        c[0] = Character.toLowerCase(c[0]);
-        String name = new String(c);
-        Object value = method.invoke(this);
-        String prop = String.format("%s.%s", PREFIX, name);
-        log.info("Storing \"{}\" with value \"{}\"", name, value);
-        props.setProperty(prop, value == null ? "" : value.toString());
-      }
-      // get or create the file
+      props.put(String.format("%s.lastDirsForFileOrganise", PREFIX), StringUtils.isBlank(lastDirsForFileOrganise) ? "" : lastDirsForFileOrganise);
+      props.put(String.format("%s.lastDirForDirCreate", PREFIX), StringUtils.isBlank(lastDirForDirCreate) ? "" : lastDirForDirCreate);
+      props.put(String.format("%s.lastDirNamesForDirCreate", PREFIX), StringUtils.isBlank(lastDirNamesForDirCreate) ? "" : lastDirNamesForDirCreate);
+      props.put(String.format("%s.skipVersionUpdateCheck", PREFIX), String.valueOf(skipVersionUpdateCheck));
+      props.put(String.format("%s.disallowOverwrite", PREFIX), String.valueOf(disallowOverwrite));
+      props.put(String.format("%s.disableInfoPopupBetweenViews", PREFIX), String.valueOf(disableInfoPopupBetweenViews));
 
+//      if (DIRECTORY_TO_FILENAME_FILTER != null) {
+//        for (Entry<String, String> e : DIRECTORY_TO_FILENAME_FILTER.entrySet()) {
+//          props.put(String.format("%s.directoryToFilenameFilter.%s", PREFIX, e.getKey()), StringUtils.isBlank(e.getValue()) ? "" : e.getValue());
+//        }
+//      }
       // write into it
       DefaultPropertiesPersister p = new DefaultPropertiesPersister();
       p.store(props, out, "");
@@ -81,5 +88,9 @@ public class Config {
     }
 
     return new FileOutputStream(PROPERTIES_FILE);
+  }
+
+  public Map<String, String> getDirectoryToFilenameFilter() {
+    return DIRECTORY_TO_FILENAME_FILTER;
   }
 }
