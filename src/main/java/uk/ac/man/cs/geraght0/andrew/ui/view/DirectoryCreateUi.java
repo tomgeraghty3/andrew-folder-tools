@@ -70,11 +70,9 @@ public class DirectoryCreateUi extends AbsViewFolderFile {
   }
 
   @Override
-  protected void restartResetOnClick() {
-    super.restartResetOnClick();
-    if (!isResultsShow) {
-      layDirChooser.reset();
-    }
+  protected void resetUiToStart() {
+    super.resetUiToStart();
+    layDirChooser.reset();
   }
 
   @Override
@@ -92,7 +90,7 @@ public class DirectoryCreateUi extends AbsViewFolderFile {
     FoldersCreateRequestResult result = new FoldersCreateRequestResult(null, null, results);
 //    FoldersCreateRequestResult result = folderService.createDirectories(layDirChooser.getChosenDirectory(), dirInput);
     Platform.runLater(() -> {
-      configureUiForResults(true);
+      setUiToResultsView();
       tblDirResults.get()
                    .populate(result.getDirectories());
     });

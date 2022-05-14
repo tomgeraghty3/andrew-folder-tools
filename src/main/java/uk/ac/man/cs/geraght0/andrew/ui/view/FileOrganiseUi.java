@@ -80,12 +80,10 @@ public class FileOrganiseUi extends AbsViewFolderFile {
   }
 
   @Override
-  protected void restartResetOnClick() {
-    super.restartResetOnClick();
-    if (!isResultsShow) {
-      tblFileResults.get()
-                    .reset();
-    }
+  protected void resetUiToStart() {
+    super.resetUiToStart();
+    tblFileResults.get()
+                  .reset();
   }
 
   @Override
@@ -96,7 +94,8 @@ public class FileOrganiseUi extends AbsViewFolderFile {
                                                  .map(FilesOrganiseResult::getFolderCreateResult)
                                                  .collect(Collectors.toList());
     Platform.runLater(() -> {
-      configureUiForResults(true);
+      setUiToResultsView();
+
       tblDirResults.get()
                    .populate(dirResults);
       tblFileResults.get()

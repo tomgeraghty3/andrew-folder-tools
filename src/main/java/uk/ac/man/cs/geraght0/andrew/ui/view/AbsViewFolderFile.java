@@ -4,6 +4,7 @@ import com.google.common.collect.Lists;
 import com.iberdrola.dtp.util.SpArrayUtils;
 import java.util.List;
 import java.util.stream.Collectors;
+import javafx.event.EventHandler;
 import javafx.scene.Node;
 import javafx.scene.control.Button;
 import javafx.scene.control.TextArea;
@@ -24,14 +25,17 @@ public abstract class AbsViewFolderFile extends AbsView {
   protected CompWithCaption<TextArea> txtDirInput;
   protected CompWithCaption<DirCreateResultsTreeTbl> tblDirResults;
   protected Button btnRestartOrReset;
-  protected Button btnCreate;
+  protected Button btnGo;
   protected BorderPane layButtons;
 
   //State
   protected boolean isResultsShow;
+  protected boolean isStandalone;
+  private EventHandler<MouseEvent> goClickEvent;
 
   public AbsViewFolderFile(final UI ui) {
     super(ui);
+    this.isStandalone = true;     //By default
   }
 
   @Override
@@ -39,8 +43,8 @@ public abstract class AbsViewFolderFile extends AbsView {
     createUiComponents();
     createViewSpecificUiComponents();
     addComponentsToView();
-    configureUiForResults(false);
     addListeners();
+    resetUiToStart();
   }
 
   protected abstract void createViewSpecificUiComponents();
@@ -54,7 +58,7 @@ public abstract class AbsViewFolderFile extends AbsView {
 
   @Override
   protected List<Node> getComponentsToToggleDisableDuringProgress() {
-    return Lists.newArrayList(txtDirInput, btnRestartOrReset, btnCreate);
+    return Lists.newArrayList(txtDirInput, btnRestartOrReset, btnGo);
   }
 
   @Override
@@ -72,10 +76,10 @@ public abstract class AbsViewFolderFile extends AbsView {
 
     //Controls
     layButtons = new BorderPane();
-    btnRestartOrReset = new Button("Restart");
-    btnCreate = new Button(getCaptionForGoButton());
+    btnRestartOrReset = new Button("Reset");
+    btnGo = new Button(getCaptionForGoButton());
     layButtons.setLeft(btnRestartOrReset);
-    layButtons.setRight(btnCreate);
+    layButtons.setRight(btnGo);
   }
 
   protected abstract String getCaptionForDirInput();
@@ -91,22 +95,42 @@ public abstract class AbsViewFolderFile extends AbsView {
   }
 
   private void addListeners() {
-    btnRestartOrReset.setOnMouseClicked(e -> {
-      restartResetOnClick();
-    });
-
-    btnCreate.setOnMouseClicked(this::onGoClick);
+    btnRestartOrReset.setOnMouseClicked(e -> restartResetOnClick());
+    goClickEvent = this::onGoClick;
+    btnGo.setOnMouseClicked(goClickEvent);
   }
 
   protected void restartResetOnClick() {
     if (isResultsShow) {
       configureUiForResults(false);
     } else {
-      txtDirInput.get()
-                 .setText("");
-      tblDirResults.get()
-                   .reset();
+      resetUiToStart();
     }
+  }
+
+  protected void setUiToResultsView() {
+    btnRestartOrReset.setText("Restart");
+    configureUiForResults(true);
+    if (isStandalone) {
+      btnGo.setDisable(true);
+    } else {
+      btnGo.setDisable(false);
+      btnGo.setText("Next");
+      btnGo.setOnMouseClicked(e -> System.out.println("Click next"));
+    }
+  }
+
+  protected void resetUiToStart() {
+    txtDirInput.get()
+               .setText("");
+    tblDirResults.get()
+                 .reset();
+
+    btnRestartOrReset.setText("Clear");
+    btnGo.setDisable(false);
+    btnGo.setText(getCaptionForGoButton());
+    btnGo.setOnMouseClicked(goClickEvent);
+    configureUiForResults(false);
   }
 
   private void onGoClick(final MouseEvent mouseEvent) {
@@ -126,9 +150,7 @@ public abstract class AbsViewFolderFile extends AbsView {
   public void configureUiForResults(boolean resultsOnShow) {
     disable(resultsOnShow, txtDirInput);
     disable(!resultsOnShow, tblDirResults);
+    btnGo.setDisable(false);
     isResultsShow = resultsOnShow;
-    btnCreate.setDisable(isResultsShow);
-    btnRestartOrReset.setText(isResultsShow ? "Restart" : "Reset");
   }
-
 }

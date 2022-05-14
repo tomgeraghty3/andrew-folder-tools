@@ -78,6 +78,11 @@ public class UI extends Application {
   @Override
   public void start(Stage primaryStage) throws Exception {
     Scene scene = generateScene();
+    primaryStage.setOnCloseRequest(r -> {
+      log.info("Closing app");
+      primaryStage.close();
+      Platform.exit();
+    });
 
     //Populate with default view
     AbsView view = PRE_SELECTED.createView(this);
