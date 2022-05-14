@@ -12,6 +12,11 @@ public class DirCreateResultsTreeTbl extends AbsTreeTable<FolderCreateResult> {
   }
 
   @Override
+  protected boolean displayResultDescForDirs() {
+    return true;
+  }
+
+  @Override
   protected String getNameOfFirstColumn() {
     return "Directory";
   }

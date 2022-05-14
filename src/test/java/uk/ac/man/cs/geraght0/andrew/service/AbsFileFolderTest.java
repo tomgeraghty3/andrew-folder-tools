@@ -18,14 +18,15 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import uk.ac.man.cs.geraght0.andrew.config.Config;
 import uk.ac.man.cs.geraght0.andrew.model.FolderCreateResult;
+import uk.ac.man.cs.geraght0.andrew.model.result.OperationDirCreate;
 import uk.ac.man.cs.geraght0.andrew.model.result.OperationFailure;
 import uk.ac.man.cs.geraght0.andrew.model.result.OperationMove;
+import uk.ac.man.cs.geraght0.andrew.model.result.OperationNotApplicable;
 import uk.ac.man.cs.geraght0.andrew.model.result.OperationNotNeeded;
 import uk.ac.man.cs.geraght0.andrew.model.result.OperationResult;
 import uk.ac.man.cs.geraght0.andrew.model.result.OperationSkipped;
-import uk.ac.man.cs.geraght0.andrew.model.result.OperationDirCreate;
-import uk.ac.man.cs.geraght0.andrew.models.config.FolderConfig;
 
 @ExtendWith(MockitoExtension.class)
 abstract class AbsFileFolderTest<T> {
@@ -40,7 +41,7 @@ abstract class AbsFileFolderTest<T> {
   @Mock
   protected FileSystemService fileSystemService;
   @Mock
-  protected FolderConfig config;
+  protected Config config;
 
   @BeforeAll
   static void beforeAll() throws IOException {
@@ -56,7 +57,7 @@ abstract class AbsFileFolderTest<T> {
     this.classUnderTest = createClassUnderTestInstance(config, fileSystemService);
   }
 
-  protected abstract T createClassUnderTestInstance(final FolderConfig config, final FileSystemService fileSystemService);
+  protected abstract T createClassUnderTestInstance(final Config config, final FileSystemService fileSystemService);
 
   protected OperationFailure newOpFail(File location) {
     return new OperationFailure(location, SIMULATED_E);
@@ -71,11 +72,11 @@ abstract class AbsFileFolderTest<T> {
   }
 
   protected OperationResult newOpNotNeededForNewDir(final File location) {
-    return new OperationNotNeeded(location, OperationNotNeeded.DIR_ALREADY_EXISTS_DESC);
+    return new OperationNotNeeded(location);
   }
 
-  protected OperationResult newOpNotNeededForFileAllocate(final File location) {
-    return new OperationNotNeeded(location, OperationNotNeeded.FILE_NOT_MATCH_PATTERN_DESC);
+  protected OperationResult newOpNotApplicableForFile(final File location) {
+    return new OperationNotApplicable(location);
   }
 
   protected OperationResult newOpMove(final File location, final File dirMovedTo) {

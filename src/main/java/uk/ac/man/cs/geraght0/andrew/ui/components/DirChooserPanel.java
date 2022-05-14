@@ -1,7 +1,7 @@
 package uk.ac.man.cs.geraght0.andrew.ui.components;
 
-import static uk.ac.man.cs.geraght0.andrew.constans.UiConstants.MAX_TXT_HEIGHT;
-import static uk.ac.man.cs.geraght0.andrew.constans.UiConstants.MIN_TXT_WIDTH;
+import static uk.ac.man.cs.geraght0.andrew.constants.UiConstants.MAX_TXT_HEIGHT;
+import static uk.ac.man.cs.geraght0.andrew.constants.UiConstants.MIN_TXT_WIDTH;
 
 import java.io.File;
 import javafx.geometry.Pos;
@@ -14,6 +14,7 @@ import javafx.scene.text.Font;
 import javafx.stage.DirectoryChooser;
 import lombok.Getter;
 import org.apache.commons.lang3.StringUtils;
+import uk.ac.man.cs.geraght0.andrew.ui.UiHelpers;
 
 @Getter
 public class DirChooserPanel extends VBox implements WrapperComp {
@@ -36,6 +37,8 @@ public class DirChooserPanel extends VBox implements WrapperComp {
     txtDirInput = new TextArea();
     txtDirInput.setMinWidth(MIN_TXT_WIDTH);
     txtDirInput.setMaxHeight(MAX_TXT_HEIGHT);
+    UiHelpers.addTabKeyNavigationBehaviourToTextArea(txtDirInput);
+
     fcInput = new DirectoryChooser();
     if (initialDirectory != null && initialDirectory.isDirectory()) {
       fcInput.setInitialDirectory(initialDirectory);
@@ -63,6 +66,10 @@ public class DirChooserPanel extends VBox implements WrapperComp {
 
   public void reset() {
     txtDirInput.setText("");
+  }
+
+  public void populateSelectedDir(String dir) {
+    txtDirInput.setText(dir);
   }
 
   public File getChosenDirectory() {

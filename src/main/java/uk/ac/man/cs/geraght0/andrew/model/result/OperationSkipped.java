@@ -19,6 +19,11 @@ public class OperationSkipped extends OperationResult {
   }
 
   @Override
+  public ResultIcon getResultIcon() {
+    return ResultIcon.WARNING;
+  }
+
+  @Override
   protected Map<String, Object> generateToStringVariableMap() {
     Map<String, Object> map = super.generateToStringVariableMap();
     map.put("detail", detail);

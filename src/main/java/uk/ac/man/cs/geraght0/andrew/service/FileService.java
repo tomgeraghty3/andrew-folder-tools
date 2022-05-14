@@ -14,19 +14,19 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
 import org.springframework.stereotype.Service;
-import uk.ac.man.cs.geraght0.andrew.constans.ErrorMessages;
+import uk.ac.man.cs.geraght0.andrew.config.Config;
+import uk.ac.man.cs.geraght0.andrew.constants.ErrorMessages;
 import uk.ac.man.cs.geraght0.andrew.model.FilesOrganiseResult;
 import uk.ac.man.cs.geraght0.andrew.model.FolderCreateResult;
-import uk.ac.man.cs.geraght0.andrew.model.result.OperationNotNeeded;
+import uk.ac.man.cs.geraght0.andrew.model.result.OperationNotApplicable;
 import uk.ac.man.cs.geraght0.andrew.model.result.OperationResult;
-import uk.ac.man.cs.geraght0.andrew.models.config.FolderConfig;
 
 @Slf4j
 @Service
 @RequiredArgsConstructor
 public class FileService {
 
-  private final FolderConfig config;
+  private final Config config;
   private final FolderService folderService;
   private final FileSystemService fileSystemService;
 
@@ -50,9 +50,9 @@ public class FileService {
 
   /**
    * For each file in the specified directory see if that filename ends with any of the configured patterns
-   * ({@link FolderConfig#getDirectoryToFilenameFilter()}) and if so move that file to the mapped directory for that pattern.
+   * ({@link Config#getDirectoryToFilenameFilter()}) and if so move that file to the mapped directory for that pattern.
    * This method will also create any of the missing subdirectories in the specified directory (i.e. the ones returned
-   * from {@link FolderConfig#deduceSubDirectoryNames()}) by delegating to {@link FolderService#handleDirAndSubDirs(File, Collection)}
+   * from {@link Config#deduceSubDirectoryNames()}) by delegating to {@link FolderService#handleDirAndSubDirs(File, Collection)}
    *
    * @param dirWithFiles The folder with files to allocate
    * @return A {@link FilesOrganiseResult} containing the subdirectory state (A {@link FolderCreateResult})
@@ -92,6 +92,6 @@ public class FileService {
                          File newDir = new File(originalDir, newDirName);
                          return fileSystemService.moveFile(file, newDir);
                        })
-                       .orElse(new OperationNotNeeded(file, OperationNotNeeded.FILE_NOT_MATCH_PATTERN_DESC));
+                       .orElse(new OperationNotApplicable(file));
   }
 }

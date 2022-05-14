@@ -2,15 +2,15 @@ package uk.ac.man.cs.geraght0.andrew.model.result;
 
 import java.io.File;
 
-public class OperationNotNeeded extends OperationResult {
+public class OperationNotApplicable extends OperationResult {
 
-  public OperationNotNeeded(final File location) {
+  public OperationNotApplicable(final File location) {
     super(location);
   }
 
   @Override
   public String getResultDescription() {
-    return "Directory Already Exists";
+    return "File Does Not Match Any Pattern";
   }
 
   @Override
@@ -21,5 +21,10 @@ public class OperationNotNeeded extends OperationResult {
     }
 
     return path;
+  }
+
+  @Override
+  public ResultIcon getResultIcon() {
+    return ResultIcon.WARNING;
   }
 }

@@ -8,6 +8,7 @@ import javafx.scene.control.Tab;
 import javafx.scene.control.TabPane;
 import javafx.scene.control.TabPane.TabClosingPolicy;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 import uk.ac.man.cs.geraght0.andrew.config.Config;
 import uk.ac.man.cs.geraght0.andrew.model.FilesOrganiseResult;
 import uk.ac.man.cs.geraght0.andrew.model.FolderCreateResult;
@@ -17,18 +18,36 @@ import uk.ac.man.cs.geraght0.andrew.ui.components.CompWithCaption;
 import uk.ac.man.cs.geraght0.andrew.ui.components.FileOrganiseResultsTreeTbl;
 
 @Slf4j
-public class FileOrganiseUi extends AbsViewFolderFile {
+public class FileOrganiseUi extends AbsViewFolderFile<FilesOrganiseResult> {
 
+  //UI components
   private CompWithCaption<FileOrganiseResultsTreeTbl> tblFileResults;
   private TabPane tabResults;
+  //State
+  private DirectoryCreateUi previousUi;
 
   public FileOrganiseUi(final UI ui) {
     super(ui);
   }
 
   @Override
-  protected void populateFromConfig(final Config config) {
+  public void populateFromConfig() {
+    log.info("Populating the UI with the last used values");
+    Config config = getBean(Config.class);
+    String dirs = config.getLastDirsForFileOrganise();
+    if (!StringUtils.isBlank(dirs)) {
+      txtDirInput.get()
+                 .setText(dirs);
+    }
+  }
 
+  @Override
+  protected void updateConfig(final Config config) {
+    String dirs = txtDirInput.get()
+                             .getText();
+    if (!StringUtils.isBlank(dirs)) {
+      config.setLastDirsForFileOrganise(dirs);
+    }
   }
 
   @Override
@@ -59,6 +78,12 @@ public class FileOrganiseUi extends AbsViewFolderFile {
   }
 
   @Override
+  protected void configureUiForNonStandaloneInResultsView() {
+    btnGo.setVisible(false);
+    //TODO go back with back button
+  }
+
+  @Override
   protected void createViewSpecificUiComponents() {
     //Output tab 1
     tblFileResults = createTbl("File organise results", new FileOrganiseResultsTreeTbl(getHostServices()));
@@ -80,10 +105,12 @@ public class FileOrganiseUi extends AbsViewFolderFile {
   }
 
   @Override
-  protected void resetUiToStart() {
-    super.resetUiToStart();
-    tblFileResults.get()
-                  .reset();
+  protected void resetUiToStart(final boolean clearDownValues) {
+    super.resetUiToStart(clearDownValues);
+    if (clearDownValues) {
+      tblFileResults.get()
+                    .reset();
+    }
   }
 
   @Override
@@ -94,7 +121,7 @@ public class FileOrganiseUi extends AbsViewFolderFile {
                                                  .map(FilesOrganiseResult::getFolderCreateResult)
                                                  .collect(Collectors.toList());
     Platform.runLater(() -> {
-      setUiToResultsView();
+      setUiToResultsView(results);
 
       tblDirResults.get()
                    .populate(dirResults);
@@ -107,5 +134,27 @@ public class FileOrganiseUi extends AbsViewFolderFile {
   public void configureUiForResults(final boolean resultsOnShow) {
     super.configureUiForResults(resultsOnShow);
     disable(!resultsOnShow, tblFileResults);
+  }
+
+  public void prepareUiWhenNotStandalone(final String dirs, final DirectoryCreateUi directoryCreateUi) {
+    isStandalone = false;
+    this.previousUi = directoryCreateUi;
+    resetUiToStart(true);
+    btnRestartOrReset.setText("Back");
+    txtDirInput.get()
+               .setText(dirs);
+  }
+
+  @Override
+  protected void restartResetOnClick() {
+    if (isStandalone) {
+      super.restartResetOnClick();
+    } else {
+      log.info("Going back to the previous view");
+      parentUi.populateView(previousUi);
+      if (isResultsShow) {
+        previousUi.resetUiToStart(true);
+      }
+    }
   }
 }

@@ -1,39 +1,41 @@
 package uk.ac.man.cs.geraght0.andrew.ui;
 
 import static org.springframework.util.ResourceUtils.CLASSPATH_URL_PREFIX;
-import static uk.ac.man.cs.geraght0.andrew.constans.UiConstants.HEIGHT_OVERALL;
-import static uk.ac.man.cs.geraght0.andrew.constans.UiConstants.WIDTH_OVERALL;
+import static uk.ac.man.cs.geraght0.andrew.constants.UiConstants.HEIGHT_OVERALL;
+import static uk.ac.man.cs.geraght0.andrew.constants.UiConstants.WIDTH_OVERALL;
 
+import java.io.InputStream;
 import java.net.URL;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.FutureTask;
 import javafx.application.Application;
 import javafx.application.Platform;
 import javafx.geometry.Pos;
 import javafx.scene.Scene;
-import javafx.scene.control.Alert;
 import javafx.scene.control.Alert.AlertType;
 import javafx.scene.control.ButtonType;
 import javafx.scene.control.Menu;
 import javafx.scene.control.MenuBar;
+import javafx.scene.control.MenuItem;
 import javafx.scene.control.RadioMenuItem;
 import javafx.scene.control.Toggle;
 import javafx.scene.control.ToggleGroup;
 import javafx.scene.image.Image;
-import javafx.scene.image.ImageView;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
 import lombok.Getter;
+import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.boot.WebApplicationType;
 import org.springframework.boot.builder.SpringApplicationBuilder;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.util.ResourceUtils;
 import uk.ac.man.cs.geraght0.andrew.AndrewFolderToolApplication;
-import uk.ac.man.cs.geraght0.andrew.config.Config;
 import uk.ac.man.cs.geraght0.andrew.service.Backend;
 import uk.ac.man.cs.geraght0.andrew.ui.view.AbsView;
 import uk.ac.man.cs.geraght0.andrew.ui.view.UiMode;
@@ -41,6 +43,7 @@ import uk.ac.man.cs.geraght0.andrew.ui.view.UiMode;
 @Slf4j
 @Getter
 public class UI extends Application {
+
   private static final UiMode PRE_SELECTED = UiMode.values()[0];
 
   private ConfigurableApplicationContext applicationContext;
@@ -50,25 +53,43 @@ public class UI extends Application {
   private StackPane root;
 
   //State
-  private Config config;
   private ExecutorService executorService;
+  private AbsView currentView;
 
+  @SneakyThrows
   @Override
   public void init() {
     String[] args = getParameters().getRaw()
                                    .toArray(new String[0]);
-    this.applicationContext =
-        new SpringApplicationBuilder()
-            .sources(AndrewFolderToolApplication.class)
-            .run(args);
-    config = getBean(Config.class);
+    try {
+      this.applicationContext =
+          new SpringApplicationBuilder()
+              .sources(AndrewFolderToolApplication.class)
+              .web(WebApplicationType.NONE)
+              .run(args);
+    } catch (Exception e) {
+      final Runnable showDialog = () -> {
+        UiHelpers.alertError("The application cannot start: " + e.getMessage());
+      };
+
+      FutureTask<Void> showDialogTask = new FutureTask<>(showDialog, null);
+      Platform.runLater(showDialogTask);
+      showDialogTask.get();
+      throw e;
+    }
+
     executorService = Executors.newSingleThreadExecutor();
+    TooltipsDefaultsFixer.setTooltipTimers(400, 10000, 200);
   }
 
   @Override
+  @SneakyThrows
   public void stop() {
-    this.applicationContext.close();
+    log.info("Stopping application");
+    executorService.shutdownNow();
+    applicationContext.close();
     Platform.exit();
+    log.info("Application stopped");
   }
 
   public <B> B getBean(Class<B> beanClass) {
@@ -78,11 +99,6 @@ public class UI extends Application {
   @Override
   public void start(Stage primaryStage) throws Exception {
     Scene scene = generateScene();
-    primaryStage.setOnCloseRequest(r -> {
-      log.info("Closing app");
-      primaryStage.close();
-      Platform.exit();
-    });
 
     //Populate with default view
     AbsView view = PRE_SELECTED.createView(this);
@@ -92,31 +108,34 @@ public class UI extends Application {
     scene.getStylesheets()
          .addAll(resource.toExternalForm());
 
-    //Check for newer version
-    Optional<String> newVersion = getBean(Backend.class).checkForNewerVersion();
-    newVersion.ifPresent(version -> {
-      log.info("A new version was detected at \"{}\". Asking the user if they would like to visit that webpage", version);
-      Alert alert = new Alert(AlertType.WARNING, "A new version of the application was found. Do you want to go to GitHub to download the new version?",
-                              ButtonType.YES, ButtonType.NO);
-      alert.setHeaderText("New version found");
-      alert.setTitle("New version found");
-      Optional<ButtonType> button = alert.showAndWait();
-      if (button.isPresent()) {
-        log.info("The user clicked button: \"{}\"", button.get()
-                                                          .getText());
-        if (button.get()
-                  .equals(ButtonType.YES)) {
-          getHostServices().showDocument(version);
-        }
-      }
-    });
-
-    primaryStage.getIcons()
-                .add(new Image(UI.class.getResourceAsStream("/images/icon.png")));
+    final InputStream res = UI.class.getResourceAsStream("/images/icon.png");
+    if (res != null) {
+      primaryStage.getIcons()
+                  .add(new Image(res));
+    }
     primaryStage.setResizable(false);
     primaryStage.setTitle("Tools for Andrew Ward-Jones");
     primaryStage.setScene(scene);
     primaryStage.show();
+
+    executorService.submit(() -> Platform.runLater(() -> {
+      //Check for newer version
+      Optional<String> newVersion = getBean(Backend.class).checkForNewerVersion();
+      newVersion.ifPresent(version -> {
+        log.info("A new version was detected at \"{}\". Asking the user if they would like to visit that webpage", version);
+        Optional<ButtonType> button = UiHelpers.showAlert(AlertType.WARNING, "A new version of the application was found. Do you want to open " +
+                                                                             "GitHub to download the new version?", "New version found",
+                                                          ButtonType.YES, ButtonType.NO);
+        if (button.isPresent()) {
+          log.info("The user clicked button: \"{}\"", button.get()
+                                                            .getText());
+          if (button.get()
+                    .equals(ButtonType.YES)) {
+            getHostServices().showDocument(version);
+          }
+        }
+      });
+    }));
   }
 
   private Scene generateScene() {
@@ -128,8 +147,7 @@ public class UI extends Application {
   }
 
   private void createMenu() {
-    Menu menu = new Menu("Menu 1");
-    menu.setGraphic(new ImageView("file:icon.png"));
+    Menu menu = new Menu("Switch App Mode");
 
     ToggleGroup toggleGroup = new ToggleGroup();
     final Map<Toggle, UiMode> map = new HashMap<>();
@@ -157,10 +175,23 @@ public class UI extends Application {
                  AbsView view = mode.createView(this);
                  populateView(view);
                });
-    menuBar = new MenuBar(menu);
+
+    MenuItem menuItem = new MenuItem("Populate with last used values");
+    Menu menuOptions = new Menu("Options", null, menuItem);
+    menuItem.setOnAction(e -> {
+      try {
+        currentView.populateFromConfig();
+        UiHelpers.showAlert(AlertType.INFORMATION, "Populated with last values used (if any)");
+      } catch (Exception ex) {
+        UiHelpers.alertError("Failed to populate with the last used values: " + ex.getMessage());
+      }
+    });
+
+    menuBar = new MenuBar(menu, menuOptions);
   }
 
-  private void populateView(final AbsView view) {
+  public void populateView(final AbsView view) {
+    currentView = view;
     root.getChildren()
         .clear();
     root.getChildren()

@@ -1,4 +1,4 @@
-package uk.ac.man.cs.geraght0.andrew.constans;
+package uk.ac.man.cs.geraght0.andrew.constants;
 
 public class UiConstants {
   //UI Constants

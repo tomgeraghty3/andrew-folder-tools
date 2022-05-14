@@ -13,13 +13,15 @@ import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.BorderPane;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
+import uk.ac.man.cs.geraght0.andrew.config.Config;
 import uk.ac.man.cs.geraght0.andrew.model.result.OperationResult;
 import uk.ac.man.cs.geraght0.andrew.ui.UI;
+import uk.ac.man.cs.geraght0.andrew.ui.UiHelpers;
 import uk.ac.man.cs.geraght0.andrew.ui.components.CompWithCaption;
 import uk.ac.man.cs.geraght0.andrew.ui.components.DirCreateResultsTreeTbl;
 
 @Slf4j
-public abstract class AbsViewFolderFile extends AbsView {
+public abstract class AbsViewFolderFile<T> extends AbsView {
 
   //UI comps
   protected CompWithCaption<TextArea> txtDirInput;
@@ -31,7 +33,9 @@ public abstract class AbsViewFolderFile extends AbsView {
   //State
   protected boolean isResultsShow;
   protected boolean isStandalone;
+  protected List<T> lastResults;
   private EventHandler<MouseEvent> goClickEvent;
+
 
   public AbsViewFolderFile(final UI ui) {
     super(ui);
@@ -44,7 +48,7 @@ public abstract class AbsViewFolderFile extends AbsView {
     createViewSpecificUiComponents();
     addComponentsToView();
     addListeners();
-    resetUiToStart();
+    resetUiToStart(true);
   }
 
   protected abstract void createViewSpecificUiComponents();
@@ -69,6 +73,7 @@ public abstract class AbsViewFolderFile extends AbsView {
   protected void createUiComponents() {
     final TextArea txtDirNames = new TextArea();
     txtDirNames.setMaxHeight(75);
+    UiHelpers.addTabKeyNavigationBehaviourToTextArea(txtDirNames);
     txtDirInput = new CompWithCaption<>(getCaptionForDirInput(), txtDirNames);
 
     //Output
@@ -102,29 +107,32 @@ public abstract class AbsViewFolderFile extends AbsView {
 
   protected void restartResetOnClick() {
     if (isResultsShow) {
-      configureUiForResults(false);
+      resetUiToStart(false);
     } else {
-      resetUiToStart();
+      resetUiToStart(true);
     }
   }
 
-  protected void setUiToResultsView() {
+  protected void setUiToResultsView(List<T> results) {
     btnRestartOrReset.setText("Restart");
     configureUiForResults(true);
+    this.lastResults = results;
     if (isStandalone) {
       btnGo.setDisable(true);
     } else {
-      btnGo.setDisable(false);
-      btnGo.setText("Next");
-      btnGo.setOnMouseClicked(e -> System.out.println("Click next"));
+      configureUiForNonStandaloneInResultsView();
     }
   }
 
-  protected void resetUiToStart() {
-    txtDirInput.get()
-               .setText("");
-    tblDirResults.get()
-                 .reset();
+  protected abstract void configureUiForNonStandaloneInResultsView();
+
+  protected void resetUiToStart(final boolean clearDownValues) {
+    if (clearDownValues) {
+      txtDirInput.get()
+                 .setText("");
+      tblDirResults.get()
+                   .reset();
+    }
 
     btnRestartOrReset.setText("Clear");
     btnGo.setDisable(false);
@@ -137,6 +145,13 @@ public abstract class AbsViewFolderFile extends AbsView {
     startProcess(() -> {
       log.info("Beginning process for {}", this.getClass()
                                                .getSimpleName());
+      Config config = getBean(Config.class);
+      try {
+        updateConfig(config);
+        config.save();
+      } catch (Exception e) {
+        log.error("Error updating config - continuing. Error: ", e);
+      }
       String text = txtDirInput.get()
                                .getText();
       List<String> dirInput = StringUtils.isBlank(text) ? null : SpArrayUtils.stream(text.split("\n"))
@@ -144,6 +159,8 @@ public abstract class AbsViewFolderFile extends AbsView {
       onGoClick(dirInput);
     });
   }
+
+  protected abstract void updateConfig(final Config config);
 
   protected abstract void onGoClick(final List<String> dirInput);
 

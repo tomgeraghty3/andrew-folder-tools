@@ -6,7 +6,6 @@ import static org.assertj.core.api.Assertions.fail;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.lenient;
-import static org.mockito.Mockito.when;
 
 import com.iberdrola.dtp.util.SpArrayUtils;
 import java.io.File;
@@ -18,14 +17,13 @@ import org.apache.commons.io.FileUtils;
 import org.assertj.core.util.Lists;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import uk.ac.man.cs.geraght0.andrew.constans.ErrorMessages;
+import uk.ac.man.cs.geraght0.andrew.config.Config;
+import uk.ac.man.cs.geraght0.andrew.constants.ErrorMessages;
 import uk.ac.man.cs.geraght0.andrew.model.FilesOrganiseResult;
 import uk.ac.man.cs.geraght0.andrew.model.FolderCreateResult;
 import uk.ac.man.cs.geraght0.andrew.model.result.OperationFailure;
-import uk.ac.man.cs.geraght0.andrew.model.result.OperationNotNeeded;
 import uk.ac.man.cs.geraght0.andrew.model.result.OperationResult;
 import uk.ac.man.cs.geraght0.andrew.model.result.OperationSkipped;
-import uk.ac.man.cs.geraght0.andrew.models.config.FolderConfig;
 
 class FileServiceTest extends AbsFileFolderTest<FileService> {
 
@@ -36,7 +34,7 @@ class FileServiceTest extends AbsFileFolderTest<FileService> {
   private static final String FILENAME_END = "hello.data";
 
   @Override
-  protected FileService createClassUnderTestInstance(final FolderConfig config, final FileSystemService fileSystemService) {
+  protected FileService createClassUnderTestInstance(final Config config, final FileSystemService fileSystemService) {
     FolderService folderService = new FolderService(config, fileSystemService);
     return new FileService(config, folderService, fileSystemService);
   }
@@ -134,7 +132,7 @@ class FileServiceTest extends AbsFileFolderTest<FileService> {
     //Expected
     List<OperationResult> subDirResult = createSubDirsResult(DIR, this::newOpNotNeededForNewDir);
     FolderCreateResult folderCreateResult = createFolderCreateResult(newOpNotNeededForNewDir(DIR), subDirResult);
-    List<OperationResult> fileResults = Lists.newArrayList(newOpNotNeededForFileAllocate(fileThree), newOpMove(fileTwo, SUB_DIR_TWO),
+    List<OperationResult> fileResults = Lists.newArrayList(newOpNotApplicableForFile(fileThree), newOpMove(fileTwo, SUB_DIR_TWO),
                                                            newOpMove(fileOne, SUB_DIR_ONE));
     final FilesOrganiseResult expected = new FilesOrganiseResult(DIR, folderCreateResult, fileResults);
 

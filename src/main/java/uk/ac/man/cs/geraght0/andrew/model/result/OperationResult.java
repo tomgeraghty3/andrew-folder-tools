@@ -1,6 +1,7 @@
 package uk.ac.man.cs.geraght0.andrew.model.result;
 
 import java.io.File;
+import java.nio.charset.StandardCharsets;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Optional;
@@ -20,12 +21,28 @@ public abstract class OperationResult {
 
   public abstract String getResultDescription();
 
+  public ResultIcon getResultIcon() {
+    return ResultIcon.TICK; //Default
+  }
+
   public Optional<OperationFailure> isFailed() {
     return checkType(OperationFailure.class);
   }
 
   public Optional<OperationSkipped> isSkipped() {
     return checkType(OperationSkipped.class);
+  }
+
+  public Optional<OperationNotNeeded> isNotNeeded() {
+    return checkType(OperationNotNeeded.class);
+  }
+
+  public Optional<OperationNotApplicable> isNotApplicable() {
+    return checkType(OperationNotApplicable.class);
+  }
+
+  public Optional<OperationDirCreate> isCreateDirSuccess() {
+    return checkType(OperationDirCreate.class);
   }
 
   private <C extends OperationResult> Optional<C> checkType(Class<C> typeToLookFor) {
@@ -78,5 +95,18 @@ public abstract class OperationResult {
     Map<String, Object> map = new LinkedHashMap<>();
     map.put("path", location.getName());
     return map;
+  }
+
+  public enum ResultIcon {
+    TICK(new String(new byte[]{(byte) 0xE2, (byte) 0x9C, (byte) 0x85}, StandardCharsets.UTF_8)),
+    CROSS(new String(new byte[]{(byte) 0xE2, (byte) 0x9D, (byte) 0x8C}, StandardCharsets.UTF_8)),
+    WARNING(new String(new byte[]{(byte) 0xE2, (byte) 0x9D, (byte) 0x97}, StandardCharsets.UTF_8));
+
+    @Getter
+    private final String icon;
+
+    ResultIcon(final String icon) {
+      this.icon = icon;
+    }
   }
 }

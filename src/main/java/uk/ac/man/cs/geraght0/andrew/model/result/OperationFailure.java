@@ -23,6 +23,11 @@ public class OperationFailure extends OperationResult {
   }
 
   @Override
+  public ResultIcon getResultIcon() {
+    return ResultIcon.CROSS;
+  }
+
+  @Override
   protected Map<String, Object> generateToStringVariableMap() {
     Map<String, Object> map = super.generateToStringVariableMap();
     map.put("failureMessage", failure.getMessage());

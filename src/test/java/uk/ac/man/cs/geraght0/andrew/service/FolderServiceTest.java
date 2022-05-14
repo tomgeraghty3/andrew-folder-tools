@@ -11,13 +11,13 @@ import java.util.List;
 import java.util.function.Function;
 import org.assertj.core.util.Lists;
 import org.junit.jupiter.api.Test;
+import uk.ac.man.cs.geraght0.andrew.config.Config;
+import uk.ac.man.cs.geraght0.andrew.constants.ErrorMessages;
 import uk.ac.man.cs.geraght0.andrew.model.FolderCreateResult;
 import uk.ac.man.cs.geraght0.andrew.model.FoldersCreateRequestResult;
 import uk.ac.man.cs.geraght0.andrew.model.result.OperationFailure;
 import uk.ac.man.cs.geraght0.andrew.model.result.OperationResult;
 import uk.ac.man.cs.geraght0.andrew.model.result.OperationSkipped;
-import uk.ac.man.cs.geraght0.andrew.constans.ErrorMessages;
-import uk.ac.man.cs.geraght0.andrew.models.config.FolderConfig;
 
 class FolderServiceTest extends AbsFileFolderTest<FolderService> {
 
@@ -27,7 +27,7 @@ class FolderServiceTest extends AbsFileFolderTest<FolderService> {
   private static final List<File> SUB_DIRS = FileFolderHelpers.toSubDirectories(TOP_DIR, SUB_DIR_NAMES);
 
   @Override
-  protected FolderService createClassUnderTestInstance(final FolderConfig config, final FileSystemService fileSystemService) {
+  protected FolderService createClassUnderTestInstance(final Config config, final FileSystemService fileSystemService) {
     return new FolderService(config, fileSystemService);
   }
 

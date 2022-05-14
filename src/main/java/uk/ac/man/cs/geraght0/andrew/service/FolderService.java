@@ -12,26 +12,26 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
 import org.springframework.stereotype.Service;
+import uk.ac.man.cs.geraght0.andrew.config.Config;
+import uk.ac.man.cs.geraght0.andrew.constants.ErrorMessages;
 import uk.ac.man.cs.geraght0.andrew.model.FolderCreateResult;
 import uk.ac.man.cs.geraght0.andrew.model.FoldersCreateRequestResult;
 import uk.ac.man.cs.geraght0.andrew.model.result.OperationFailure;
 import uk.ac.man.cs.geraght0.andrew.model.result.OperationResult;
-import uk.ac.man.cs.geraght0.andrew.constans.ErrorMessages;
-import uk.ac.man.cs.geraght0.andrew.models.config.FolderConfig;
 
 @Slf4j
 @Service
 @RequiredArgsConstructor
 public class FolderService {
 
-  private final FolderConfig config;
+  private final Config config;
   private final FileSystemService fileSystemService;
 
   /**
    * For each of the Strings specified in the list:
    * <ol>
    *   <li>Create the directory as a child of the specified <code>parentDirectory</code></li>
-   *   <li>Under that newly created directory, create subdirectories for all the configured directory names in {@link FolderConfig#deduceSubDirectoryNames()}</li>
+   *   <li>Under that newly created directory, create subdirectories for all the configured directory names in {@link Config#deduceSubDirectoryNames()}</li>
    * </ol>
    *
    * @param parentDirectory     The parent directory

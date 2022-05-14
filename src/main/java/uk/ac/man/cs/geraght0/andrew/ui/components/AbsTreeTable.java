@@ -45,7 +45,7 @@ public abstract class AbsTreeTable<T> extends TreeTableView<OperationResult> {
       return new ReadOnlyObjectWrapper<>(value);
     });
 
-    secondCol.setCellFactory(tc -> new HyperlinkCell(hostServices));
+    secondCol.setCellFactory(tc -> new HyperlinkCell(hostServices, displayResultDescForDirs()));
 
     firstCol.prefWidthProperty()
             .bind(widthProperty()
@@ -53,7 +53,11 @@ public abstract class AbsTreeTable<T> extends TreeTableView<OperationResult> {
     secondCol.prefWidthProperty()
              .bind(widthProperty()
                        .multiply(0.4));
+
+    setStyle("-fx-selection-bar: white;");
   }
+
+  protected abstract boolean displayResultDescForDirs();
 
   protected abstract String getNameOfFirstColumn();
 

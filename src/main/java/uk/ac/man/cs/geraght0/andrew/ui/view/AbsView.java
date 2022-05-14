@@ -1,8 +1,8 @@
 package uk.ac.man.cs.geraght0.andrew.ui.view;
 
-import static uk.ac.man.cs.geraght0.andrew.constans.UiConstants.HEIGHT_OVERALL;
-import static uk.ac.man.cs.geraght0.andrew.constans.UiConstants.MIN_TXT_WIDTH;
-import static uk.ac.man.cs.geraght0.andrew.constans.UiConstants.WIDTH_OVERALL;
+import static uk.ac.man.cs.geraght0.andrew.constants.UiConstants.HEIGHT_OVERALL;
+import static uk.ac.man.cs.geraght0.andrew.constants.UiConstants.MIN_TXT_WIDTH;
+import static uk.ac.man.cs.geraght0.andrew.constants.UiConstants.WIDTH_OVERALL;
 
 import com.google.common.collect.Lists;
 import java.util.List;
@@ -22,7 +22,6 @@ import javafx.scene.control.ProgressBar;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.StackPane;
 import lombok.extern.slf4j.Slf4j;
-import uk.ac.man.cs.geraght0.andrew.config.Config;
 import uk.ac.man.cs.geraght0.andrew.ui.UI;
 import uk.ac.man.cs.geraght0.andrew.ui.UiHelpers;
 import uk.ac.man.cs.geraght0.andrew.ui.components.WrapperComp;
@@ -30,16 +29,15 @@ import uk.ac.man.cs.geraght0.andrew.ui.components.WrapperComp;
 @Slf4j
 public abstract class AbsView extends GridPane {
 
-  private final UI parent;
+  protected final UI parentUi;
   //  protected final StackPane parent;
   protected int currentRow;
   private final ProgressBar progressBar;
 
   public AbsView(final UI ui) {
-    this.parent = ui;
+    this.parentUi = ui;
     configure(getRootPane());
     build();
-    populateFromConfig(getConfig());
     progressBar = new ProgressBar();
     progressBar.setMinWidth(MIN_TXT_WIDTH);
     progressBar.setVisible(false);
@@ -51,27 +49,23 @@ public abstract class AbsView extends GridPane {
     return null;
   }
 
-  protected Config getConfig() {
-    return parent.getConfig();
-  }
-
   protected StackPane getRootPane() {
-    return parent.getRoot();
+    return parentUi.getRoot();
   }
 
   protected <B> B getBean(final Class<B> beanClass) {
-    return parent.getBean(beanClass);
+    return parentUi.getBean(beanClass);
   }
 
   protected ExecutorService getExecutorService() {
-    return parent.getExecutorService();
+    return parentUi.getExecutorService();
   }
 
   public HostServices getHostServices() {
-    return parent.getHostServices();
+    return parentUi.getHostServices();
   }
 
-  protected abstract void populateFromConfig(final Config config);
+  public abstract void populateFromConfig();
 
   protected abstract void build();
 
@@ -128,7 +122,7 @@ public abstract class AbsView extends GridPane {
       } catch (Exception e) {
         log.error("Uncaught error", e);
         String msg = e.getMessage() == null ? "Unexpected error" : e.getMessage();
-        UiHelpers.alert(msg);
+        UiHelpers.alertError(msg);
       } finally {
         //Revert
         getComponentsToShowDuringProgress().forEach(n -> n.setVisible(false));

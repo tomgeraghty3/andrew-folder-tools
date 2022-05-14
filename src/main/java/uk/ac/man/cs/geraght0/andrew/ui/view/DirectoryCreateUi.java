@@ -1,25 +1,26 @@
 package uk.ac.man.cs.geraght0.andrew.ui.view;
 
-import com.google.common.collect.Lists;
 import java.io.File;
 import java.util.List;
+import java.util.Optional;
+import java.util.stream.Collectors;
 import javafx.application.Platform;
 import javafx.scene.Node;
+import javafx.scene.control.Alert.AlertType;
+import javafx.scene.control.ButtonType;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 import uk.ac.man.cs.geraght0.andrew.config.Config;
 import uk.ac.man.cs.geraght0.andrew.model.FolderCreateResult;
 import uk.ac.man.cs.geraght0.andrew.model.FoldersCreateRequestResult;
-import uk.ac.man.cs.geraght0.andrew.model.result.OperationDirCreate;
-import uk.ac.man.cs.geraght0.andrew.model.result.OperationFailure;
-import uk.ac.man.cs.geraght0.andrew.model.result.OperationMove;
-import uk.ac.man.cs.geraght0.andrew.model.result.OperationNotNeeded;
-import uk.ac.man.cs.geraght0.andrew.model.result.OperationSkipped;
+import uk.ac.man.cs.geraght0.andrew.model.result.OperationResult;
 import uk.ac.man.cs.geraght0.andrew.service.FolderService;
 import uk.ac.man.cs.geraght0.andrew.ui.UI;
+import uk.ac.man.cs.geraght0.andrew.ui.UiHelpers;
 import uk.ac.man.cs.geraght0.andrew.ui.components.DirChooserPanel;
 
 @Slf4j
-public class DirectoryCreateUi extends AbsViewFolderFile {
+public class DirectoryCreateUi extends AbsViewFolderFile<FolderCreateResult> {
 
   private DirChooserPanel layDirChooser;
 
@@ -28,8 +29,32 @@ public class DirectoryCreateUi extends AbsViewFolderFile {
   }
 
   @Override
-  protected void populateFromConfig(final Config config) {
+  public void populateFromConfig() {
+    log.info("Populating the UI with the last used values");
+    Config config = getBean(Config.class);
+    String dirNames = config.getLastDirNamesForDirCreate();
+    if (!StringUtils.isBlank(dirNames)) {
+      txtDirInput.get()
+                 .setText(dirNames);
+    }
+    String dir = config.getLastDirForDirCreate();
+    if (!StringUtils.isBlank(dir)) {
+      layDirChooser.populateSelectedDir(dir);
+    }
+  }
 
+  @Override
+  protected void updateConfig(final Config config) {
+    String dirNames = txtDirInput.get()
+                                 .getText();
+    if (!StringUtils.isBlank(dirNames)) {
+      config.setLastDirNamesForDirCreate(dirNames);
+    }
+    String dir = layDirChooser.getChosenDirectory() == null ? null : layDirChooser.getChosenDirectory()
+                                                                                  .getAbsolutePath();
+    if (!StringUtils.isBlank(dir)) {
+      config.setLastDirForDirCreate(dir);
+    }
   }
 
   @Override
@@ -55,6 +80,59 @@ public class DirectoryCreateUi extends AbsViewFolderFile {
   }
 
   @Override
+  protected void configureUiForNonStandaloneInResultsView() {
+    btnGo.setDisable(false);
+    btnGo.setText("Next");
+    btnGo.setOnMouseClicked(e -> {
+      if (lastResults == null) {
+        throw new IllegalStateException("Next button should not be available because lastResults is null");
+      }
+
+      List<File> dirCreated = lastResults.stream()
+                                         .map(FolderCreateResult::getDirCreateResult)
+                                         .filter(r -> r.isCreateDirSuccess()
+                                                       .isPresent() || r.isNotNeeded()
+                                                                        .isPresent())
+                                         .map(OperationResult::getLocation)
+                                         .collect(Collectors.toList());
+      if (dirCreated.isEmpty()) {
+        UiHelpers.alertError("No directories were successfully created so cannot move onto the next step. Try restarting and creating directories again");
+      } else {
+        String dirsAsText = dirCreated.stream()
+                                      .map(File::getAbsolutePath)
+                                      .collect(Collectors.joining("\n"));
+
+        boolean popupDisabled = getBean(Config.class).isDisableInfoPopupBetweenViews();
+        boolean continueToNextView = popupDisabled;
+        if (!popupDisabled) {
+          String subDirs = getBean(Config.class).getDirectoryToFilenameFilter()
+                                                .entrySet()
+                                                .stream()
+                                                .filter(entry -> !StringUtils.isBlank(entry.getValue()))
+                                                .map(entry -> String.format("%s - files ending with \"%s\"", entry.getKey(), entry.getValue()))
+                                                .collect(Collectors.joining("\n"));
+
+          final String txt = String.format("The following containers were successfully created:\n%s\n\nPopulate these with files now. The next screen will " +
+                                           "organise any files into the configured folders:\n%s", dirsAsText, subDirs);
+          Optional<ButtonType> clickType = UiHelpers.showAlert(AlertType.CONFIRMATION, txt, ButtonType.NEXT, ButtonType.CANCEL);
+          continueToNextView = clickType.isPresent() && clickType.get()
+                                                                 .equals(ButtonType.NEXT);
+        }
+
+        if (continueToNextView) {
+          FileOrganiseUi newUi = new FileOrganiseUi(parentUi);
+          newUi.prepareUiWhenNotStandalone(dirsAsText, this);
+          log.info("{} complete, moving to next stage: {}", this.getClass()
+                                                                .getSimpleName(), newUi.getClass()
+                                                                                       .getSimpleName());
+
+          parentUi.populateView(newUi);
+        }
+      }
+    });
+  }
+
+  @Override
   protected void createViewSpecificUiComponents() {
     //Input
     layDirChooser = new DirChooserPanel("Root Directory to create containers in");
@@ -70,27 +148,29 @@ public class DirectoryCreateUi extends AbsViewFolderFile {
   }
 
   @Override
-  protected void resetUiToStart() {
-    super.resetUiToStart();
-    layDirChooser.reset();
+  protected void resetUiToStart(final boolean clearDownValues) {
+    super.resetUiToStart(clearDownValues);
+    if (clearDownValues) {
+      layDirChooser.reset();
+    }
   }
 
   @Override
   protected void onGoClick(final List<String> dirInput) {
     FolderService folderService = getBean(FolderService.class);
     //Test
-    final File dir = new File("C:\\Users\\Tom\\Desktop\\T");
-    final List<FolderCreateResult> results = Lists.newArrayList(new FolderCreateResult(new OperationMove(dir, dir),
-                                                                                       Lists.newArrayList(
-                                                                                           new OperationFailure(dir, new IllegalStateException("Stub")),
-                                                                                           new OperationNotNeeded(dir,
-                                                                                                                  OperationNotNeeded.DIR_ALREADY_EXISTS_DESC),
-                                                                                           new OperationSkipped(dir, OperationSkipped.DIR_NOT_CREATED),
-                                                                                           new OperationDirCreate(dir))));
-    FoldersCreateRequestResult result = new FoldersCreateRequestResult(null, null, results);
-//    FoldersCreateRequestResult result = folderService.createDirectories(layDirChooser.getChosenDirectory(), dirInput);
+//    final File dir = new File("C:\\Users\\Tom\\Desktop\\T");
+//    final List<FolderCreateResult> results = Lists.newArrayList(new FolderCreateResult(new OperationDirCreate(dir),
+//                                                                                       Lists.newArrayList(
+//                                                                                           new OperationFailure(dir, new IllegalStateException("Stub")),
+//                                                                                           new OperationNotNeeded(dir),
+//                                                                                           new OperationNotApplicable(dir),
+//                                                                                           new OperationSkipped(dir, OperationSkipped.DIR_NOT_CREATED),
+//                                                                                           new OperationMove(dir, dir))));
+//    FoldersCreateRequestResult result = new FoldersCreateRequestResult(null, null, results);
+    FoldersCreateRequestResult result = folderService.createDirectories(layDirChooser.getChosenDirectory(), dirInput);
     Platform.runLater(() -> {
-      setUiToResultsView();
+      setUiToResultsView(result.getDirectories());
       tblDirResults.get()
                    .populate(result.getDirectories());
     });
@@ -100,5 +180,9 @@ public class DirectoryCreateUi extends AbsViewFolderFile {
   public void configureUiForResults(final boolean resultsOnShow) {
     super.configureUiForResults(resultsOnShow);
     disable(resultsOnShow, layDirChooser);
+  }
+
+  public void setStandalone(final boolean isStandalone) {
+    this.isStandalone = isStandalone;
   }
 }

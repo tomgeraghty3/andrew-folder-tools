@@ -12,6 +12,11 @@ public class FileOrganiseResultsTreeTbl extends AbsTreeTable<FilesOrganiseResult
   }
 
   @Override
+  protected boolean displayResultDescForDirs() {
+    return false;
+  }
+
+  @Override
   protected String getNameOfFirstColumn() {
     return "File";
   }
