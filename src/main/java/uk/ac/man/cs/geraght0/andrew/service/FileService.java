@@ -45,7 +45,9 @@ public class FileService {
       throw new IllegalArgumentException(ErrorMessages.DIRS_NOT_EXIST.generateMsg(SpCollectionUtils.toString(notExist, File::getPath)));
     }
 
-    return dirs.stream().map(this::allocateFiles).collect(Collectors.toList());
+    return dirs.stream()
+               .map(this::organiseFiles)
+               .collect(Collectors.toList());
   }
 
   /**
@@ -54,12 +56,12 @@ public class FileService {
    * This method will also create any of the missing subdirectories in the specified directory (i.e. the ones returned
    * from {@link Config#deduceSubDirectoryNames()}) by delegating to {@link FolderService#handleDirAndSubDirs(File, Collection)}
    *
-   * @param dirWithFiles The folder with files to allocate
+   * @param dirWithFiles The folder with files to organise
    * @return A {@link FilesOrganiseResult} containing the subdirectory state (A {@link FolderCreateResult})
    * and a {@link OperationResult} for each file in the specified directory
    */
-  public FilesOrganiseResult allocateFiles(File dirWithFiles) {
-    log.info("Received a request to allocate all files within directory \"{}\"", dirWithFiles.getAbsolutePath());
+  public FilesOrganiseResult organiseFiles(File dirWithFiles) {
+    log.info("Received a request to organise all files within directory \"{}\"", dirWithFiles.getAbsolutePath());
 
     //Handle files
     Set<String> subDirectories = config.deduceSubDirectoryNames();        //TODO if empty?
@@ -67,7 +69,7 @@ public class FileService {
     FolderCreateResult folderCreateResult = null;
     File[] files = dirWithFiles.listFiles(f -> !f.isDirectory());
     if (files == null || files.length == 0) {
-      log.info("No files present in the directory - nothing to allocate");
+      log.info("No files present in the directory - nothing to organise");
       fileResults = Collections.emptyList();
       folderCreateResult = FileFolderHelpers.createResultWhenSkippedAsOrganiseDirIsEmpty(dirWithFiles, subDirectories);
     } else {
@@ -75,17 +77,17 @@ public class FileService {
       log.info("Checking directory and any missing subdirectories: {}", subDirectories);
       folderCreateResult = folderService.handleDirAndSubDirs(dirWithFiles, subDirectories);
 
-      log.info("Allocating {}", SpNumberUtils.descCount(files.length, "file"));
+      log.info("Organising {}", SpNumberUtils.descCount(files.length, "file"));
       fileResults = SpArrayUtils.stream(files)
-                                .map(this::allocateFile)
+                                .map(this::organiseFile)
                                 .collect(Collectors.toList());
-      log.info(FileFolderHelpers.generateOperationResultsLog("File allocation results:", fileResults));
+      log.info(FileFolderHelpers.generateOperationResultsLog("File organisation results:", fileResults));
     }
 
     return new FilesOrganiseResult(dirWithFiles, folderCreateResult, fileResults);
   }
 
-  private OperationResult allocateFile(final File file) {
+  private OperationResult organiseFile(final File file) {
     Optional<String> fileEligible = FileFolderHelpers.isFileEligible(config.getDirectoryToFilenameFilter(), file.getName());
     return fileEligible.map(newDirName -> {
                          File originalDir = file.getParentFile();

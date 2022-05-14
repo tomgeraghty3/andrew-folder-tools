@@ -52,9 +52,13 @@ abstract class AbsFileFolderTest<T> {
 
   @BeforeEach
   void before() {
+    mockSubDirNames(config);
+    this.classUnderTest = createClassUnderTestInstance(config, fileSystemService);
+  }
+
+  protected void mockSubDirNames(final Config config) {
     lenient().when(config.deduceSubDirectoryNames())
              .thenReturn(new LinkedHashSet<>(SUB_DIR_NAMES));
-    this.classUnderTest = createClassUnderTestInstance(config, fileSystemService);
   }
 
   protected abstract T createClassUnderTestInstance(final Config config, final FileSystemService fileSystemService);

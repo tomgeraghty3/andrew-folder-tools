@@ -2,9 +2,11 @@ package uk.ac.man.cs.geraght0.andrew.service;
 
 import java.io.File;
 import java.io.IOException;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.FileUtils;
 import org.springframework.stereotype.Service;
+import uk.ac.man.cs.geraght0.andrew.config.Config;
 import uk.ac.man.cs.geraght0.andrew.model.result.OperationDirCreate;
 import uk.ac.man.cs.geraght0.andrew.model.result.OperationFailure;
 import uk.ac.man.cs.geraght0.andrew.model.result.OperationMove;
@@ -13,7 +15,10 @@ import uk.ac.man.cs.geraght0.andrew.model.result.OperationResult;
 
 @Slf4j
 @Service
+@RequiredArgsConstructor
 public class FileSystemService {
+
+  private final Config config;
 
   /**
    * If the specified directory does not exist, create it and return a {@link OperationDirCreate} state if the creation
@@ -52,7 +57,7 @@ public class FileSystemService {
     log.debug("Moving {} to {}", fileToMove.getName(), dirToMoveTo.getAbsolutePath());
     try {
       File dest = new File(dirToMoveTo, fileToMove.getName());
-      if (dest.exists()) {
+      if (dest.exists() && !config.isDisallowOverwrite()) {
         log.info("There is already a file in the destination. Overwriting it");
         FileUtils.forceDelete(dest);
       }

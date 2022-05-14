@@ -6,7 +6,6 @@
 		<groupId>org.springframework.boot</groupId>
 		<artifactId>spring-boot-starter-parent</artifactId>
 		<version>2.6.6</version>
-		<relativePath/> <!-- lookup parent from repository -->
 	</parent>
 	<groupId>uk.ac.man.cs.geraght0</groupId>
 	<artifactId>andrew-folder-tools</artifactId>
@@ -16,6 +15,17 @@
 	<properties>
 		<java.version>1.8</java.version>
 	</properties>
+
+	<scm>
+		<url>https://github.com/tomgeraghty3/andrew-folder-tools</url>
+		<connection>scm:git:git://github.com/tomgeraghty3/andrew-folder-tools.git</connection>
+	</scm>
+	<developers>
+		<developer>
+			<name>Tom Geraghty</name>
+			<email>tomgeraghty03@gmail.com</email>
+		</developer>
+	</developers>
 
 	<dependencies>
 		<dependency>

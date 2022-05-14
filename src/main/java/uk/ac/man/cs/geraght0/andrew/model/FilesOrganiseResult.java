@@ -10,7 +10,7 @@ import uk.ac.man.cs.geraght0.andrew.model.result.OperationResult;
  */
 @Value
 public class FilesOrganiseResult {
-  File directory;                             //The directory containing the files to allocate to the subdirectories
+  File directory;                             //The directory containing the files to organise into the subdirectories
   FolderCreateResult folderCreateResult;      //The result of the creation of the subdirectories (if they don't exist etc.)
-  List<OperationResult> fileResults;          //The result of each of the files being allocated
+  List<OperationResult> fileResults;          //The result of each of the files being organised
 }

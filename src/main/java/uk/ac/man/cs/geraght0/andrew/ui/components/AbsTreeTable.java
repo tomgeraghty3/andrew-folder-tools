@@ -66,7 +66,7 @@ public abstract class AbsTreeTable<T> extends TreeTableView<OperationResult> {
         .clear();
     if (result != null) {
       List<TreeItem<OperationResult>> items = result.stream()
-                                                    .map(this::mapFilesAllocateRequestResult)
+                                                    .map(this::mapFilesOrganiseRequestResult)
                                                     .filter(Objects::nonNull)
                                                     .collect(Collectors.toList());
 
@@ -75,7 +75,7 @@ public abstract class AbsTreeTable<T> extends TreeTableView<OperationResult> {
     }
   }
 
-  private TreeItem<OperationResult> mapFilesAllocateRequestResult(final T item) {
+  private TreeItem<OperationResult> mapFilesOrganiseRequestResult(final T item) {
     TreeItem<OperationResult> dir = new TreeItem<>(getDirResult(item));
     List<OperationResult> subItems = getSubItemResults(item);
     if (subItems.isEmpty()) {

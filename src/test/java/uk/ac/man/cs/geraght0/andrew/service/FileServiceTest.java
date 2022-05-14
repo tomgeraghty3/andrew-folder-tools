@@ -4,8 +4,10 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.assertj.core.api.Assertions.fail;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.lenient;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.when;
 
 import com.iberdrola.dtp.util.SpArrayUtils;
 import java.io.File;
@@ -50,7 +52,7 @@ class FileServiceTest extends AbsFileFolderTest<FileService> {
 
   @Test
   void testOrganise_whenNoDirs_exception() {
-    assertThatThrownBy(() -> classUnderTest.organiseFiles(null))
+    assertThatThrownBy(() -> classUnderTest.organiseFiles((List<String>) null))
         .isInstanceOf(IllegalArgumentException.class)
         .hasMessage(ErrorMessages.DIR_TO_ORGANISE_EMPTY.generateMsg());
 
@@ -77,11 +79,11 @@ class FileServiceTest extends AbsFileFolderTest<FileService> {
     FolderCreateResult folderCreateResult = createFolderCreateResult(newOpSkipped(DIR, OperationSkipped.DIR_EMPTY), subDirResult);
     final FilesOrganiseResult expected = new FilesOrganiseResult(DIR, folderCreateResult, Lists.newArrayList());
 
-    assertFileAllocations(expected);
+    assertFileOrganisation(expected);
   }
 
   @Test
-  void testAllocate_whenOneFileAndDirsNotExist_folderCreateResultPopulatedAndFileMoved() {
+  void testOraganise_whenOneFileAndDirsNotExist_folderCreateResultPopulatedAndFileMoved() {
     //Create stub files
     File file = createFile(String.format("tmp.%s", TXT_EXT));
 
@@ -95,11 +97,11 @@ class FileServiceTest extends AbsFileFolderTest<FileService> {
     final FilesOrganiseResult expected = new FilesOrganiseResult(DIR, folderCreateResult, fileResults);
 
     //Actual
-    assertFileAllocations(expected);
+    assertFileOrganisation(expected);
   }
 
   @Test
-  void testAllocate_whenFilesMatchAndDirsExist_filesMoved() throws IOException {
+  void testOraganise_whenFilesMatchAndDirsExist_filesMoved() throws IOException {
     //Create stub files
     createSubDirs();
     File fileOne = createFile(String.format("tmp.%s", TXT_EXT));
@@ -115,11 +117,11 @@ class FileServiceTest extends AbsFileFolderTest<FileService> {
     final FilesOrganiseResult expected = new FilesOrganiseResult(DIR, folderCreateResult, fileResults);
 
     //Actual
-    assertFileAllocations(expected);
+    assertFileOrganisation(expected);
   }
 
   @Test
-  void testAllocate_whenFilesMatchAndSomeDontAndDirsExist_someFilesMoved() throws IOException {
+  void testOraganise_whenFilesMatchAndSomeDontAndDirsExist_someFilesMoved() throws IOException {
     //Create stub files
     createSubDirs();
     File fileOne = createFile(String.format("tmp.%s", TXT_EXT));
@@ -137,7 +139,7 @@ class FileServiceTest extends AbsFileFolderTest<FileService> {
     final FilesOrganiseResult expected = new FilesOrganiseResult(DIR, folderCreateResult, fileResults);
 
     //Actual
-    assertFileAllocations(expected);
+    assertFileOrganisation(expected);
     assertThat(fileOne).doesNotExist();
     assertThat(new File(SUB_DIR_ONE, fileOne.getName())).exists();
     assertThat(fileTwo).doesNotExist();
@@ -146,53 +148,68 @@ class FileServiceTest extends AbsFileFolderTest<FileService> {
   }
 
   @Test
-  void testAllocate_whenFilesMatchButSomeFailToMove_someFilesMovedSomeFail() throws IOException {
-    //Create Dir one only
+  void testOrganise_whenFilesMatchButSomeFailToMove_someFilesMovedSomeFail() throws IOException {
+    //This method will call the real method of FileSystemService so we need to use a Spy not a Mock. Create new mocks/spies for the beans
+    Config config = mock(Config.class);
+    FileSystemService fss = spy(new FileSystemService(config));
+    FileService classUnderTestForThisTest = createClassUnderTestInstance(config, fss);
+    mockFilenameFilters(config, FILENAME_END, TXT_EXT);
+    mockSubDirNames(config);
+    when(config.isDisallowOverwrite()).thenReturn(true);
+
+    //Create Dirs
     FileUtils.forceMkdir(SUB_DIR_ONE);
-    //Make dir 2 fail dir creation
-    final OperationFailure failForDirTwo = newOpFail(SUB_DIR_TWO);
-    doReturn(failForDirTwo).when(fileSystemService)
-                           .createDirectoryIfNotExist(SUB_DIR_TWO);
+    FileUtils.forceMkdir(SUB_DIR_TWO);
 
     //Create stub files
     File fileOne = createFile(String.format("tmp.%s", TXT_EXT));
     File fileTwo = createFile(String.format("other%s", FILENAME_END));
-
-    //Mock - purposely put these the other way round
-    mockFilenameFilters(FILENAME_END, TXT_EXT);
+    //Now create an already existing "fileOne" in SUB_DIR_TWO
+    File fileAtDestPath = new File(SUB_DIR_TWO, fileOne.getName());
+    FileUtils.touch(fileAtDestPath);
+    assertThat(fileAtDestPath).exists();
 
     //Expected
-    //File one will fail to move coz dir 2 doesn't exist, capture error msg
+    //File one will fail to move coz it already exists at the destination path, capture error msg
     Throwable expectedException = null;
     try {
-      FileUtils.moveFileToDirectory(fileOne, SUB_DIR_TWO, false);
+      FileUtils.moveFile(fileOne, fileAtDestPath);
       fail("Exception expected");
     } catch (Exception e) {
       expectedException = e;
     }
     OperationFailure fileOneOperationResult = new OperationFailure(fileOne, expectedException);
     List<OperationResult> fileResults = Lists.newArrayList(newOpMove(fileTwo, SUB_DIR_ONE), fileOneOperationResult);
-    List<OperationResult> subDirResult = Lists.newArrayList(newOpNotNeededForNewDir(SUB_DIR_ONE), failForDirTwo);
+    List<OperationResult> subDirResult = Lists.newArrayList(newOpNotNeededForNewDir(SUB_DIR_ONE), newOpNotNeededForNewDir(SUB_DIR_TWO));
     FolderCreateResult folderCreateResult = createFolderCreateResult(newOpNotNeededForNewDir(DIR), subDirResult);
     final FilesOrganiseResult expected = new FilesOrganiseResult(DIR, folderCreateResult, fileResults);
 
     //Actual
-    assertFileAllocations(expected);
+    assertFileOrganisation(classUnderTestForThisTest, expected);
     assertThat(fileOne).exists();
     assertThat(fileTwo).doesNotExist();
     assertThat(new File(SUB_DIR_ONE, fileTwo.getName())).exists();
   }
 
-  private void assertFileAllocations(final FilesOrganiseResult expected) {
-    final FilesOrganiseResult actual = classUnderTest.allocateFiles(DIR);
+  private void assertFileOrganisation(final FilesOrganiseResult expected) {
+    assertFileOrganisation(classUnderTest, expected);
+  }
+
+  private void assertFileOrganisation(final FileService serviceBeingTested, final FilesOrganiseResult expected) {
+    final FilesOrganiseResult actual = serviceBeingTested.organiseFiles(DIR);
     assertThat(actual).isEqualTo(expected);
   }
 
   private void mockFilenameFilters(String dirOneFilter, String dirTwoFilter) {
+    mockFilenameFilters(config, dirOneFilter, dirTwoFilter);
+  }
+
+  private void mockFilenameFilters(Config configInstance, String dirOneFilter, String dirTwoFilter) {
     LinkedHashMap<String, String> map = new LinkedHashMap<>();
     map.put(SUB_DIR_ONE_NAME, dirOneFilter == null ? "" : dirOneFilter);
     map.put(SUB_DIR_TWO_NAME, dirTwoFilter == null ? "" : dirTwoFilter);
-    lenient().when(config.getDirectoryToFilenameFilter()).thenReturn(map);
+    lenient().when(configInstance.getDirectoryToFilenameFilter())
+             .thenReturn(map);
   }
 
   private void createSubDirs() throws IOException {
