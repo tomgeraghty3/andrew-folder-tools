@@ -24,7 +24,7 @@ public class AndrewFolderToolApplication {
   }
 
   @Bean
-  public PropertySourcesPlaceholderConfigurer propertySourcesPlaceholderConfigurer() {
+  public static PropertySourcesPlaceholderConfigurer propertySourcesPlaceholderConfigurer() {
     PropertySourcesPlaceholderConfigurer properties = new PropertySourcesPlaceholderConfigurer();
     properties.setIgnoreResourceNotFound(true);
     log.info("Reading properties at location {}", ConfigConstants.PROPERTIES_FILE.getAbsolutePath());
