@@ -27,14 +27,13 @@ import uk.ac.man.cs.geraght0.andrew.ui.UiHelpers;
 import uk.ac.man.cs.geraght0.andrew.ui.components.WrapperComp;
 
 @Slf4j
-public abstract class AbsView extends GridPane {
+public abstract class AbsView extends GridPane { //NOSONAR - the parent hierarchy allows for UI reuse
 
   protected final UI parentUi;
-  //  protected final StackPane parent;
   protected int currentRow;
   private final ProgressBar progressBar;
 
-  public AbsView(final UI ui) {
+  protected AbsView(final UI ui) {
     this.parentUi = ui;
     configure(getRootPane());
     build();
@@ -76,9 +75,9 @@ public abstract class AbsView extends GridPane {
     this.setPadding(new Insets(10, 10, 10, 10));
     this.setMinSize(WIDTH_OVERALL, HEIGHT_OVERALL);
     NumberBinding maxScale = Bindings.min(parent.widthProperty()
-                                              .divide(WIDTH_OVERALL),
+                                                .divide(WIDTH_OVERALL),
                                           parent.heightProperty()
-                                              .divide(HEIGHT_OVERALL));
+                                                .divide(HEIGHT_OVERALL));
     this.scaleXProperty()
         .bind(maxScale);
     this.scaleYProperty()
@@ -86,15 +85,29 @@ public abstract class AbsView extends GridPane {
   }
 
   protected void addToView(final Node component) {
+    addToView(component, (HPos) null);
+  }
+
+  protected void addToView(final Node component, HPos alignment) {
     this.add(component, 0, currentRow);
+    if (alignment != null) {
+      setHalignment(component, alignment);
+    }
     currentRow++;
   }
 
   protected void addToView(final Node component, final Integer place) {
+    add(component, place, null);
+  }
+
+  protected void add(final Node component, final Integer place, final HPos alignment) {
     if (place == null) {
-      addToView(component);
+      addToView(component, alignment);
     } else {
       this.add(component, 0, place);
+      if (alignment != null) {
+        setHalignment(component, alignment);
+      }
     }
   }
 

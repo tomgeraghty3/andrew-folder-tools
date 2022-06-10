@@ -15,7 +15,7 @@ public abstract class OperationResult {
 
   private final File location;
 
-  public OperationResult(final File location) {
+  protected OperationResult(final File location) {
     this.location = location.getAbsoluteFile();
   }
 
@@ -83,7 +83,7 @@ public abstract class OperationResult {
   }
 
   protected String[] getExcludeEqualsFields() {
-    return null;
+    return null;    //NOSONAR - no need to make an empty array here, the using method can accept nulls
   }
 
   @Override
@@ -93,7 +93,7 @@ public abstract class OperationResult {
 
   protected Map<String, Object> generateToStringVariableMap() {
     Map<String, Object> map = new LinkedHashMap<>();
-    map.put("path", location.getName());
+    map.put("path", location.getAbsolutePath());
     return map;
   }
 

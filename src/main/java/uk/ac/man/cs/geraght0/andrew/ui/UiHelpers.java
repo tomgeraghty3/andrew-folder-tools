@@ -18,68 +18,77 @@ import uk.ac.man.cs.geraght0.andrew.constants.UiConstants;
 
 public class UiHelpers {
 
+  private UiHelpers() {}
+
   public static void alertError(final String msg) {
-    showAlert(AlertType.ERROR, msg);
+    UiHelpers.showAlert(AlertType.ERROR, msg);
   }
 
-  public static Optional<ButtonType> showAlert(final AlertType type, String msg, ButtonType... buttons) {
-    return showAlert(type, msg, null, buttons);
+  static void showAlert(final AlertType type, final String msg, final ButtonType... buttons) {
+    UiHelpers.showAlert(type, msg, null, buttons);
   }
 
-  public static Optional<ButtonType> showAlert(final AlertType type, String msg, String title, ButtonType... buttons) {
+  public static Optional<ButtonType> showAlert(final AlertType type, final String msg, final String title, final ButtonType... buttons) {
     if (Platform.isFxApplicationThread()) {
-      return createAndShow(type, msg, title, buttons);
+      return UiHelpers.createAndShow(type, msg, title, buttons);
     } else {
-      Platform.runLater(() -> createAndShow(type, msg, title, buttons));
+      Platform.runLater(() -> UiHelpers.createAndShow(type, msg, title, buttons));
       return Optional.empty();
     }
   }
 
-  private static Optional<ButtonType> createAndShow(final AlertType type, String msg, final String title, ButtonType... buttons) {
-    Alert alert = create(type, msg, title, true, buttons);
+  private static Optional<ButtonType> createAndShow(final AlertType type, final String msg, final String title, final ButtonType... buttons) {
+    final Alert alert = UiHelpers.create(type, msg, title, true, buttons);
     return alert.showAndWait();
   }
 
-  private static Alert create(final AlertType type, String msg, final String title, boolean setSize, ButtonType... buttons) {
-    Alert alert = new Alert(type, msg, buttons);
+  private static Alert create(final AlertType type, final String msg, final String title, final boolean setSize, final ButtonType... buttons) {
+    final Alert alert = new Alert(type, msg, buttons);
     if (title != null) {
       alert.setTitle(title);
       alert.setHeaderText(title);
     }
     alert.setResizable(true);
+    alert.setWidth(Region.USE_PREF_SIZE);
     if (setSize) {
       alert.getDialogPane()
            .setMinHeight(Region.USE_PREF_SIZE);
       alert.getDialogPane()
+           .setMinWidth(Region.USE_PREF_SIZE);
+      alert.getDialogPane()
            .getChildren()
            .stream()
-           .filter(node -> node instanceof Label)
-           .forEach(node -> ((Label) node).setMinHeight(Region.USE_PREF_SIZE));
+           .filter(Label.class::isInstance)
+           .forEach(node -> {
+             final Label lbl = (Label) node;
+             lbl.setMinHeight(Region.USE_PREF_SIZE);
+             lbl.setMinWidth(Region.USE_PREF_SIZE);
+           });
     }
     return alert;
   }
 
-  public static void createAlertWithStackTrace(Throwable throwable) {
-    String reason = ExceptionUtils.getStackTrace(throwable);
-    String stack = StringUtils.isBlank(reason) ? "Unexpected error" : reason;
-    Alert alert = create(AlertType.ERROR, stack, "Error", false);
+  public static void createAlertWithStackTrace(final Throwable throwable) {
+    final String reason = ExceptionUtils.getStackTrace(throwable);
+    final String stack = StringUtils.isBlank(reason) ? "Unexpected error" : reason;
+    final Alert alert = UiHelpers.create(AlertType.ERROR, stack, "Error", false);
     final double width = UiConstants.WIDTH_OVERALL * .75;
     alert.setWidth(width);
-    alert.setHeight(UiConstants.HEIGHT_OVERALL - 100);
+    alert.setHeight(UiConstants.HEIGHT_OVERALL - 100.0);
     alert.getDialogPane()
          .setMinHeight(width);
     alert.getDialogPane()
          .getChildren()
          .stream()
-         .filter(node -> node instanceof Label)
+         .filter(Label.class::isInstance)
          .forEach(node -> ((Label) node).setMinHeight(width));
     alert.showAndWait();
   }
 
-  public static void addTabKeyNavigationBehaviourToTextArea(TextArea textArea) {
+  public static void addTabKeyNavigationBehaviourToTextArea(final TextArea textArea) {
     textArea.addEventFilter(KeyEvent.KEY_PRESSED, event -> {
       if (event.getCode() == KeyCode.TAB) {
-        TextAreaBehavior behaviour = ((TextAreaSkin) textArea.getSkin()).getBehavior();
+        final TextAreaBehavior behaviour = ((TextAreaSkin) textArea.getSkin()).getBehavior();
         if (event.isControlDown()) {
           behaviour.callAction("InsertTab");
         } else if (event.isShiftDown()) {

@@ -5,9 +5,11 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import lombok.Getter;
 
-public class OperationMove extends OperationResult {
+public class OperationMove extends OperationResult {    //NOSONAR - equals() in super uses reflection
 
+  @Getter
   private final File dirMovedTo;
 
   public OperationMove(final File location, final File dirMovedTo) {

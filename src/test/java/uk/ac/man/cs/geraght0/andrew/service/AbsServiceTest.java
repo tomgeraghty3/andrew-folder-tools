@@ -1,23 +1,19 @@
 package uk.ac.man.cs.geraght0.andrew.service;
 
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.when;
 
 import java.io.File;
-import java.io.IOException;
-import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.function.Function;
 import java.util.stream.Collectors;
-import org.apache.commons.io.FileUtils;
 import org.assertj.core.util.Lists;
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import uk.ac.man.cs.geraght0.andrew.AbsTest;
 import uk.ac.man.cs.geraght0.andrew.config.Config;
 import uk.ac.man.cs.geraght0.andrew.model.FolderCreateResult;
 import uk.ac.man.cs.geraght0.andrew.model.result.OperationDirCreate;
@@ -29,9 +25,9 @@ import uk.ac.man.cs.geraght0.andrew.model.result.OperationResult;
 import uk.ac.man.cs.geraght0.andrew.model.result.OperationSkipped;
 
 @ExtendWith(MockitoExtension.class)
-abstract class AbsFileFolderTest<T> {
+abstract class AbsServiceTest<T> extends AbsTest {
+
   protected static final RuntimeException SIMULATED_E = new IllegalArgumentException("Simulate");
-  protected static final File DIR = new File("src/test/resources/test-dir").getAbsoluteFile();
   protected static final String SUB_DIR_ONE_NAME = "one";
   protected static final String SUB_DIR_TWO_NAME = "two";
   protected static final List<String> SUB_DIR_NAMES = Lists.newArrayList(SUB_DIR_ONE_NAME, SUB_DIR_TWO_NAME);
@@ -43,13 +39,6 @@ abstract class AbsFileFolderTest<T> {
   @Mock
   protected Config config;
 
-  @BeforeAll
-  static void beforeAll() throws IOException {
-    if (!DIR.exists()) {
-      FileUtils.forceMkdir(DIR);
-    }
-  }
-
   @BeforeEach
   void before() {
     mockSubDirNames(config);
@@ -57,8 +46,8 @@ abstract class AbsFileFolderTest<T> {
   }
 
   protected void mockSubDirNames(final Config config) {
-    lenient().when(config.deduceSubDirectoryNames())
-             .thenReturn(new LinkedHashSet<>(SUB_DIR_NAMES));
+    lenient().when(config.deduceSubDirectoryNames(anyString()))
+             .thenReturn(SUB_DIR_NAMES);
   }
 
   protected abstract T createClassUnderTestInstance(final Config config, final FileSystemService fileSystemService);
@@ -108,20 +97,5 @@ abstract class AbsFileFolderTest<T> {
     OperationResult state = stateFunc.apply(location);
     when(fileSystemService.createDirectoryIfNotExist(location)).thenReturn(state);
     return state;
-  }
-
-  @AfterEach
-  void after() throws IOException {
-    File[] files = DIR.listFiles();
-    if (files != null) {
-      for (File f : files) {
-        FileUtils.forceDelete(f);
-      }
-    }
-  }
-
-  @AfterAll
-  static void afterAll() throws IOException {
-    FileUtils.deleteDirectory(DIR);
   }
 }

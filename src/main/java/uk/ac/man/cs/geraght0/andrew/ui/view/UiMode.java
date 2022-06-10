@@ -6,21 +6,24 @@ import uk.ac.man.cs.geraght0.andrew.ui.UI;
 
 @Getter
 public enum UiMode {
-  BOTH("Create Directories and Organise Files", ui -> {
+  PASSWORD_PROTECT("PasswordProtectView", false, PasswordEntryView::new),
+  BOTH("Create Directories and Organise Files", true, ui -> {
     DirectoryCreateUi view = new DirectoryCreateUi(ui);
     view.setStandalone(false);
     return view;
   }),
-  CREATE_DIR("Just Create Directories", DirectoryCreateUi::new),
-  FILE_ORGANISE("Just Organise Files In Directories", FileOrganiseUi::new),
+  CREATE_DIR("Just Create Directories", true, DirectoryCreateUi::new),
+  FILE_ORGANISE("Just Organise Files In Directories", true, FileOrganiseUi::new),
   ;
 
   private final String displayName;
+  private final boolean displayInMenu;
   private final Function<UI, AbsView> funcToCreateView;
 
-  UiMode(final String displayName,
+  UiMode(final String displayName, final boolean displayInMenu,
          final Function<UI, AbsView> funcToCreateView) {
     this.displayName = displayName;
+    this.displayInMenu = displayInMenu;
     this.funcToCreateView = funcToCreateView;
   }
 

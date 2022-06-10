@@ -19,7 +19,7 @@ import uk.ac.man.cs.geraght0.andrew.model.result.OperationFailure;
 import uk.ac.man.cs.geraght0.andrew.model.result.OperationResult;
 import uk.ac.man.cs.geraght0.andrew.model.result.OperationSkipped;
 
-class FolderServiceTest extends AbsFileFolderTest<FolderService> {
+class FolderServiceTest extends AbsServiceTest<FolderService> {
 
   private static final String TOP_DIR_NAME = "topLevelDir";
   private static final File TOP_DIR = new File(DIR, TOP_DIR_NAME).getAbsoluteFile();
@@ -44,15 +44,17 @@ class FolderServiceTest extends AbsFileFolderTest<FolderService> {
         .isInstanceOf(IllegalArgumentException.class)
         .hasMessage(ErrorMessages.DIR_NAMES_TO_CREATE_EMPTY.generateMsg(DIR.getName()));
 
-    assertThatThrownBy(() -> classUnderTest.createDirectories(DIR, Lists.newArrayList()))
+    final List<String> list = Lists.newArrayList();
+    assertThatThrownBy(() -> classUnderTest.createDirectories(DIR, list))
         .isInstanceOf(IllegalArgumentException.class)
         .hasMessage(ErrorMessages.DIR_NAMES_TO_CREATE_EMPTY.generateMsg(DIR.getName()));
   }
 
   @Test
   void testCreate_whenDirectoryNotExist_exception() {
-    final File file = new File("/notexist");
-    assertThatThrownBy(() -> classUnderTest.createDirectories(file, Lists.newArrayList("dir")))
+    final File file = new File("/not-exist");
+    final List<String> list = Lists.newArrayList("dir");
+    assertThatThrownBy(() -> classUnderTest.createDirectories(file, list))
         .isInstanceOf(IllegalArgumentException.class)
         .hasMessage(ErrorMessages.DIR_NOT_EXIST.generateMsg(file.getAbsolutePath()));
   }
@@ -62,7 +64,8 @@ class FolderServiceTest extends AbsFileFolderTest<FolderService> {
     final String repeatOne = "repeated";
     final String repeatTwo = "repeated2";
     final List<String> input = Lists.newArrayList(repeatOne, repeatTwo, repeatTwo.toUpperCase(), repeatOne.toUpperCase());
-    assertThatThrownBy(() -> classUnderTest.createDirectories(new File("."), input))
+    final File f = new File(".");
+    assertThatThrownBy(() -> classUnderTest.createDirectories(f, input))
         .isInstanceOf(IllegalArgumentException.class)
         .hasMessage(ErrorMessages.DIR_NAMES_REPEATED.generateMsg(Lists.newArrayList(repeatTwo, repeatOne)));
   }

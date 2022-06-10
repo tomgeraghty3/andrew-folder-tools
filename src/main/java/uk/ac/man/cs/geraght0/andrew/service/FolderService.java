@@ -31,7 +31,7 @@ public class FolderService {
    * For each of the Strings specified in the list:
    * <ol>
    *   <li>Create the directory as a child of the specified <code>parentDirectory</code></li>
-   *   <li>Under that newly created directory, create subdirectories for all the configured directory names in {@link Config#deduceSubDirectoryNames()}</li>
+   *   <li>Under that newly created directory, create subdirectories for all the configured directory names in {@link Config#deduceSubDirectoryNames(String)}</li>
    * </ol>
    *
    * @param parentDirectory     The parent directory
@@ -72,7 +72,7 @@ public class FolderService {
   }
 
   private FolderCreateResult createTopLevelDir(final String dirName, final File parentDirectory) {
-    final Set<String> subDirNames = config.deduceSubDirectoryNames();
+    final List<String> subDirNames = config.deduceSubDirectoryNames(dirName);
     log.info("Request to create \"{}\" (with subdirectories {}) in directory \"{}\"", dirName,
              subDirNames, parentDirectory.getAbsolutePath());
     File topLevel = new File(parentDirectory, dirName);

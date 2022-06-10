@@ -11,34 +11,34 @@ import org.slf4j.LoggerFactory;
  *
  * @author <a href="mailto:daniel.armbrust.list@gmail.com">Dan Armbrust</a>
  */
-public class TooltipsDefaultsFixer {
+class TooltipsDefaultsFixer {
+
+  private TooltipsDefaultsFixer() {}
 
   /**
    * Returns true if successful.
    * Current defaults are 1000, 5000, 200;
    */
   @SuppressWarnings({"rawtypes", "unchecked"})
-  public static boolean setTooltipTimers(long openDelay, long visibleDuration, long closeDelay) {
+  static void setTooltipTimers(final long openDelay, final long visibleDuration, final long closeDelay) {
     try {
-      Field f = Tooltip.class.getDeclaredField("BEHAVIOR");
-      f.setAccessible(true);
+      final Field f = Tooltip.class.getDeclaredField("BEHAVIOR");
+      f.setAccessible(true);    //NOSONAR - no way to do this  without reflection until Java 9 but client using Java 8
 
-      Class[] classes = Tooltip.class.getDeclaredClasses();
-      for (Class clazz : classes) {
-        if (clazz.getName()
-                 .equals("javafx.scene.control.Tooltip$TooltipBehavior")) {
-          Constructor ctor = clazz.getDeclaredConstructor(Duration.class, Duration.class, Duration.class, boolean.class);
-          ctor.setAccessible(true);
-          Object tooltipBehavior = ctor.newInstance(new Duration(openDelay), new Duration(visibleDuration), new Duration(closeDelay), false);
-          f.set(null, tooltipBehavior);
+      final Class[] classes = Tooltip.class.getDeclaredClasses();
+      for (final Class clazz : classes) {
+        if (clazz.getName()                                                   //NOSONAR no way to use instanceof because Tooltip Behaviour has private access
+                 .equals("javafx.scene.control.Tooltip$TooltipBehavior")) {   //NOSONAR no way to use instanceof because Tooltip Behaviour has private access
+          final Constructor ctor = clazz.getDeclaredConstructor(Duration.class, Duration.class, Duration.class, boolean.class);
+          ctor.setAccessible(true);          //NOSONAR - no way to do this without reflection until Java 9 but client using Java 8
+          final Object tooltipBehavior = ctor.newInstance(new Duration(openDelay), new Duration(visibleDuration), new Duration(closeDelay), false);
+          f.set(null, tooltipBehavior);      //NOSONAR - no way to do this  without reflection until Java 9 but client using Java 8
           break;
         }
       }
-    } catch (Exception e) {
+    } catch (final Exception e) {
       LoggerFactory.getLogger(TooltipsDefaultsFixer.class)
                    .error("Unexpected", e);
-      return false;
     }
-    return true;
   }
 }

@@ -18,7 +18,7 @@ import uk.ac.man.cs.geraght0.andrew.ui.components.CompWithCaption;
 import uk.ac.man.cs.geraght0.andrew.ui.components.FileOrganiseResultsTreeTbl;
 
 @Slf4j
-public class FileOrganiseUi extends AbsViewFolderFile<FilesOrganiseResult> {
+public class FileOrganiseUi extends AbsViewFolderFile<FilesOrganiseResult> {//NOSONAR - the parent hierarchy allows for UI reuse
 
   //UI components
   private CompWithCaption<FileOrganiseResultsTreeTbl> tblFileResults;
@@ -28,6 +28,12 @@ public class FileOrganiseUi extends AbsViewFolderFile<FilesOrganiseResult> {
 
   public FileOrganiseUi(final UI ui) {
     super(ui);
+  }
+
+  @Override
+  protected void build() {
+    super.build();
+    previousUi = null;
   }
 
   @Override

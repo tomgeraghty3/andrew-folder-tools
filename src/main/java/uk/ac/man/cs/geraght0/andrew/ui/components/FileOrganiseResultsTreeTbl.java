@@ -5,7 +5,7 @@ import javafx.application.HostServices;
 import uk.ac.man.cs.geraght0.andrew.model.FilesOrganiseResult;
 import uk.ac.man.cs.geraght0.andrew.model.result.OperationResult;
 
-public class FileOrganiseResultsTreeTbl extends AbsTreeTable<FilesOrganiseResult> {
+public class FileOrganiseResultsTreeTbl extends AbsTreeTable<FilesOrganiseResult> { //NOSONAR - the parent hierarchy allows for UI reuse
 
   public FileOrganiseResultsTreeTbl(final HostServices hostServices) {
     super(hostServices);

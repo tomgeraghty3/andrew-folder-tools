@@ -9,7 +9,7 @@
 	</parent>
 	<groupId>uk.ac.man.cs.geraght0</groupId>
 	<artifactId>andrew-folder-tools</artifactId>
-	<version>1.0</version>
+	<version>1.1</version>
 	<description>Folder tools for Andrew</description>
 
 	<properties>

@@ -17,7 +17,7 @@ import org.apache.commons.lang3.StringUtils;
 import uk.ac.man.cs.geraght0.andrew.ui.UiHelpers;
 
 @Getter
-public class DirChooserPanel extends VBox implements WrapperComp {
+public class DirChooserPanel extends VBox implements WrapperComp {   //NOSONAR - the parent hierarchy allows for UI reuse
 
   private TextArea txtDirInput;
   private DirectoryChooser fcInput;

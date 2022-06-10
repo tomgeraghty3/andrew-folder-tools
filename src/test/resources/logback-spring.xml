@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration>
+  <include resource="org/springframework/boot/logging/logback/defaults.xml"/>
+  <include resource="org/springframework/boot/logging/logback/console-appender.xml"/>
+
+  <appender name="Console" class="ch.qos.logback.core.ConsoleAppender">
+    <layout class="ch.qos.logback.classic.PatternLayout">
+      <pattern>%clr(%d{${LOG_DATEFORMAT_PATTERN:-yyyy-MM-dd HH:mm:ss.SSS}}){faint} %clr(${LOG_LEVEL_PATTERN:-%5p}) %clr(${PID:- }){magenta} %clr(---){faint}
+        %clr([%25.25t]){faint} %clr(%-40.40logger{39}){cyan} %clr(:){faint} %m%n${LOG_EXCEPTION_CONVERSION_WORD:-%wEx}
+      </pattern>
+    </layout>
+  </appender>
+
+  <!-- LOG everything at INFO level -->
+  <root level="info">
+    <appender-ref ref="Console"/>
+  </root>
+
+  <!-- LOG "com.baeldung*" at TRACE level -->
+  <logger name="uk.ac.man.cs.geraght0.andrew" level="trace" additivity="false">
+    <appender-ref ref="Console"/>
+  </logger>
+
+</configuration>

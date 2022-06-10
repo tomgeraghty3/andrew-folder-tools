@@ -36,6 +36,7 @@ import org.springframework.boot.builder.SpringApplicationBuilder;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.util.ResourceUtils;
 import uk.ac.man.cs.geraght0.andrew.AndrewFolderToolApplication;
+import uk.ac.man.cs.geraght0.andrew.config.Config;
 import uk.ac.man.cs.geraght0.andrew.service.Backend;
 import uk.ac.man.cs.geraght0.andrew.ui.view.AbsView;
 import uk.ac.man.cs.geraght0.andrew.ui.view.UiMode;
@@ -43,8 +44,6 @@ import uk.ac.man.cs.geraght0.andrew.ui.view.UiMode;
 @Slf4j
 @Getter
 public class UI extends Application {
-
-  private static final UiMode PRE_SELECTED = UiMode.values()[0];
 
   private ConfigurableApplicationContext applicationContext;
 
@@ -68,9 +67,7 @@ public class UI extends Application {
               .web(WebApplicationType.NONE)
               .run(args);
     } catch (Exception e) {
-      final Runnable showDialog = () -> {
-        UiHelpers.alertError("The application cannot start: " + e.getMessage());
-      };
+      final Runnable showDialog = () -> UiHelpers.alertError("The application cannot start: " + e.getMessage());
 
       FutureTask<Void> showDialogTask = new FutureTask<>(showDialog, null);
       Platform.runLater(showDialogTask);
@@ -101,7 +98,13 @@ public class UI extends Application {
     Scene scene = generateScene();
 
     //Populate with default view
-    AbsView view = PRE_SELECTED.createView(this);
+    UiMode modeToDisplay;
+    if (getBean(Config.class).isDisablePasswordProtect()) {
+      modeToDisplay = UiMode.BOTH;
+    } else {
+      modeToDisplay = UiMode.PASSWORD_PROTECT;
+    }
+    AbsView view = modeToDisplay.createView(this);
     populateView(view);
 
     URL resource = ResourceUtils.getURL(String.format("%sstyle.css", CLASSPATH_URL_PREFIX));
@@ -114,7 +117,7 @@ public class UI extends Application {
                   .add(new Image(res));
     }
     primaryStage.setResizable(false);
-    primaryStage.setTitle("Tools for Andrew Ward-Jones");
+    primaryStage.setTitle("Folder Tools for Andrew Ward-Jones");
     primaryStage.setScene(scene);
     primaryStage.show();
 
@@ -152,21 +155,23 @@ public class UI extends Application {
     ToggleGroup toggleGroup = new ToggleGroup();
     final Map<Toggle, UiMode> map = new HashMap<>();
     final UiMode[] modes = UiMode.values();
-    Toggle first = null;
+    Toggle itemToSelect = null;
     for (UiMode mode : modes) {
-      RadioMenuItem item = new RadioMenuItem(mode.getDisplayName());
-      map.put(item, mode);
-      toggleGroup.getToggles()
-                 .add(item);
-      menu.getItems()
-          .add(item);
+      if (mode.isDisplayInMenu()) {
+        RadioMenuItem item = new RadioMenuItem(mode.getDisplayName());
+        map.put(item, mode);
+        toggleGroup.getToggles()
+                   .add(item);
+        menu.getItems()
+            .add(item);
 
-      if (mode == PRE_SELECTED) {
-        first = item;
+        if (mode == UiMode.BOTH) {
+          itemToSelect = item;
+        }
       }
     }
 
-    toggleGroup.selectToggle(first);
+    toggleGroup.selectToggle(itemToSelect);
     toggleGroup.selectedToggleProperty()
                .addListener((o, oldValue, newValue) -> {
                  UiMode mode = map.get(newValue);

@@ -8,7 +8,6 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
-import java.util.Set;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -54,7 +53,7 @@ public class FileService {
    * For each file in the specified directory see if that filename ends with any of the configured patterns
    * ({@link Config#getDirectoryToFilenameFilter()}) and if so move that file to the mapped directory for that pattern.
    * This method will also create any of the missing subdirectories in the specified directory (i.e. the ones returned
-   * from {@link Config#deduceSubDirectoryNames()}) by delegating to {@link FolderService#handleDirAndSubDirs(File, Collection)}
+   * from {@link Config#deduceSubDirectoryNames(String)} by delegating to {@link FolderService#handleDirAndSubDirs(File, Collection)}
    *
    * @param dirWithFiles The folder with files to organise
    * @return A {@link FilesOrganiseResult} containing the subdirectory state (A {@link FolderCreateResult})
@@ -63,10 +62,12 @@ public class FileService {
   public FilesOrganiseResult organiseFiles(File dirWithFiles) {
     log.info("Received a request to organise all files within directory \"{}\"", dirWithFiles.getAbsolutePath());
 
+    //TODO dirWithFailes null?
+
     //Handle files
-    Set<String> subDirectories = config.deduceSubDirectoryNames();        //TODO if empty?
+    List<String> subDirectories = config.deduceSubDirectoryNames(dirWithFiles.getName());        //TODO if empty?
     List<OperationResult> fileResults;
-    FolderCreateResult folderCreateResult = null;
+    FolderCreateResult folderCreateResult;
     File[] files = dirWithFiles.listFiles(f -> !f.isDirectory());
     if (files == null || files.length == 0) {
       log.info("No files present in the directory - nothing to organise");
@@ -79,7 +80,7 @@ public class FileService {
 
       log.info("Organising {}", SpNumberUtils.descCount(files.length, "file"));
       fileResults = SpArrayUtils.stream(files)
-                                .map(this::organiseFile)
+                                .map(f -> organiseFile(f, dirWithFiles.getName()))
                                 .collect(Collectors.toList());
       log.info(FileFolderHelpers.generateOperationResultsLog("File organisation results:", fileResults));
     }
@@ -87,8 +88,8 @@ public class FileService {
     return new FilesOrganiseResult(dirWithFiles, folderCreateResult, fileResults);
   }
 
-  private OperationResult organiseFile(final File file) {
-    Optional<String> fileEligible = FileFolderHelpers.isFileEligible(config.getDirectoryToFilenameFilter(), file.getName());
+  private OperationResult organiseFile(final File file, final String containerName) {
+    Optional<String> fileEligible = FileFolderHelpers.isFileEligible(config.getDirectoryToFilenameFilter(), containerName, file.getName());
     return fileEligible.map(newDirName -> {
                          File originalDir = file.getParentFile();
                          File newDir = new File(originalDir, newDirName);

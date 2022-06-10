@@ -11,14 +11,14 @@ public class OperationFailure extends OperationResult {
 
   private final Throwable failure;
 
-  public OperationFailure(final File location, Throwable failure) {
+  public OperationFailure(final File location, final Throwable failure) {
     super(location);
     this.failure = failure;
   }
 
   @Override
   public String getResultDescription() {
-    String msg = ObjectUtils.defaultIfNull(failure.getMessage(), "Unknown Error");
+    final String msg = ObjectUtils.defaultIfNull(failure.getMessage(), "Unknown Error");
     return String.format("Failed: %s", msg);
   }
 
@@ -29,7 +29,7 @@ public class OperationFailure extends OperationResult {
 
   @Override
   protected Map<String, Object> generateToStringVariableMap() {
-    Map<String, Object> map = super.generateToStringVariableMap();
+    final Map<String, Object> map = super.generateToStringVariableMap();
     map.put("failureMessage", failure.getMessage());
     return map;
   }
@@ -44,7 +44,7 @@ public class OperationFailure extends OperationResult {
       return false;
     }
     final OperationFailure that = (OperationFailure) o;
-    boolean equals = super.equals(o);
+    final boolean equals = super.equals(o);
     if (!equals) {
       return false;
     }
@@ -52,12 +52,23 @@ public class OperationFailure extends OperationResult {
     if (ObjectUtils.allNull(failure, that.failure)) {
       return true;
     } else if (ObjectUtils.allNotNull(failure, that.failure)) {
-      boolean classMatch = failure.getClass().equals(that.failure.getClass());
-      boolean msgMatch = Objects.equals(failure.getMessage(), that.failure.getMessage());
+      final boolean classMatch = failure.getClass()
+                                        .equals(that.failure.getClass());
+      final boolean msgMatch = Objects.equals(failure.getMessage(), that.failure.getMessage());
       return classMatch && msgMatch;
     } else {
       return false;
     }
+  }
+
+  @Override
+  public int hashCode() {
+    int hash = super.hashCode();
+    hash += failure.getClass()
+                   .hashCode();
+    hash += failure.getMessage() == null ? 17 : failure.getMessage()
+                                                       .hashCode();
+    return hash;
   }
 
   @Override

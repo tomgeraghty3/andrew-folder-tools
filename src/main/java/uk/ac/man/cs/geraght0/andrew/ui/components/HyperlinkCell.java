@@ -14,7 +14,7 @@ import uk.ac.man.cs.geraght0.andrew.model.result.OperationResult;
 import uk.ac.man.cs.geraght0.andrew.ui.UiHelpers;
 
 @Slf4j
-public class HyperlinkCell extends TreeTableCell<OperationResult, OperationResult> {
+public class HyperlinkCell extends TreeTableCell<OperationResult, OperationResult> {    //NOSONAR - the parent hierarchy allows for UI reuse
 
   private final boolean displayResultDescForDirs;
   private final Hyperlink link;
@@ -38,9 +38,9 @@ public class HyperlinkCell extends TreeTableCell<OperationResult, OperationResul
     UiHelpers.createAlertWithStackTrace(failure);
   };
 
-  private final static Tooltip OPEN_DIR_TOOLTIP = new Tooltip("Click to open the directory");
-  private final static Tooltip OPEN_DIR_FROM_FILE_TOOLTIP = new Tooltip("Click to open the directory of the file");
-  private final static Tooltip SEE_FAILURE_TOOLTIP = new Tooltip("Click to see failure details");
+  private static final Tooltip OPEN_DIR_TOOLTIP = new Tooltip("Click to open the directory");
+  private static final Tooltip OPEN_DIR_FROM_FILE_TOOLTIP = new Tooltip("Click to open the directory of the file");
+  private static final Tooltip SEE_FAILURE_TOOLTIP = new Tooltip("Click to see failure details");
 
   public HyperlinkCell(HostServices hostServices, boolean displayResultDescForDirs) {
     this.hostServices = hostServices;
@@ -62,11 +62,7 @@ public class HyperlinkCell extends TreeTableCell<OperationResult, OperationResul
       String icon = item.getResultIcon()
                         .getIcon();
       final String textToDisplay;
-      if (!displayResultDescForDirs && isOperationOnDirectoryOrFile) {
-        textToDisplay = "Open Directory";
-      } else {
-        textToDisplay = String.format("%s %s", icon, item.getResultDescription());
-      }
+      textToDisplay = deduceTextToDisplay(item, isOperationOnDirectoryOrFile, icon);
       link.setText(textToDisplay);
       if (dir != null) {
         setEmpty = false;
@@ -93,5 +89,15 @@ public class HyperlinkCell extends TreeTableCell<OperationResult, OperationResul
     }
 
     setGraphic(setEmpty ? null : link);
+  }
+
+  private String deduceTextToDisplay(final OperationResult item, final boolean isOperationOnDirectoryOrFile, final String icon) {
+    final String textToDisplay;
+    if (!displayResultDescForDirs && isOperationOnDirectoryOrFile) {
+      textToDisplay = "Open Directory";
+    } else {
+      textToDisplay = String.format("%s %s", icon, item.getResultDescription());
+    }
+    return textToDisplay;
   }
 }

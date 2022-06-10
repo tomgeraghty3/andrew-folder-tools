@@ -9,12 +9,11 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.when;
 
-import com.iberdrola.dtp.util.SpArrayUtils;
 import java.io.File;
 import java.io.IOException;
+import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.stream.Collectors;
 import org.apache.commons.io.FileUtils;
 import org.assertj.core.util.Lists;
 import org.junit.jupiter.api.BeforeEach;
@@ -27,7 +26,7 @@ import uk.ac.man.cs.geraght0.andrew.model.result.OperationFailure;
 import uk.ac.man.cs.geraght0.andrew.model.result.OperationResult;
 import uk.ac.man.cs.geraght0.andrew.model.result.OperationSkipped;
 
-class FileServiceTest extends AbsFileFolderTest<FileService> {
+class FileServiceTest extends AbsServiceTest<FileService> {
 
   private static final File SUB_DIR_ONE = new File(DIR, SUB_DIR_ONE_NAME);
   private static final File SUB_DIR_TWO = new File(DIR, SUB_DIR_TWO_NAME);
@@ -56,7 +55,8 @@ class FileServiceTest extends AbsFileFolderTest<FileService> {
         .isInstanceOf(IllegalArgumentException.class)
         .hasMessage(ErrorMessages.DIR_TO_ORGANISE_EMPTY.generateMsg());
 
-    assertThatThrownBy(() -> classUnderTest.organiseFiles(Lists.newArrayList()))
+    final List<String> list = Collections.emptyList();
+    assertThatThrownBy(() -> classUnderTest.organiseFiles(list))
         .isInstanceOf(IllegalArgumentException.class)
         .hasMessage(ErrorMessages.DIR_TO_ORGANISE_EMPTY.generateMsg());
   }
@@ -68,7 +68,8 @@ class FileServiceTest extends AbsFileFolderTest<FileService> {
     final String f2 = "dir/dir2/my-file";
     final File file2 = new File(f2);
     final File file3 = new File("src");
-    assertThatThrownBy(() -> classUnderTest.organiseFiles(Lists.newArrayList(f1, f2, file3.getName())))
+    final List<String> list = Lists.newArrayList(f1, f2, file3.getName());
+    assertThatThrownBy(() -> classUnderTest.organiseFiles(list))
         .isInstanceOf(IllegalArgumentException.class)
         .hasMessage(ErrorMessages.DIRS_NOT_EXIST.generateMsg(Lists.newArrayList(file.getAbsolutePath(), file2.getAbsolutePath())));
   }
@@ -101,7 +102,7 @@ class FileServiceTest extends AbsFileFolderTest<FileService> {
   }
 
   @Test
-  void testOraganise_whenFilesMatchAndDirsExist_filesMoved() throws IOException {
+  void testOraganise_whenFilesMatchAndDirsExist_filesMoved() {
     //Create stub files
     createSubDirs();
     File fileOne = createFile(String.format("tmp.%s", TXT_EXT));
@@ -121,7 +122,7 @@ class FileServiceTest extends AbsFileFolderTest<FileService> {
   }
 
   @Test
-  void testOraganise_whenFilesMatchAndSomeDontAndDirsExist_someFilesMoved() throws IOException {
+  void testOraganise_whenFilesMatchAndSomeDontAndDirsExist_someFilesMoved() {
     //Create stub files
     createSubDirs();
     File fileOne = createFile(String.format("tmp.%s", TXT_EXT));
@@ -212,29 +213,7 @@ class FileServiceTest extends AbsFileFolderTest<FileService> {
              .thenReturn(map);
   }
 
-  private void createSubDirs() throws IOException {
-    for (File subDir : SUB_DIRS) {
-      FileUtils.forceMkdir(subDir);
-    }
-  }
-
-  private File createFile(final String fileName) {
-    List<File> files = createFiles(fileName);
-    assertThat(files).hasSize(1);
-    return files.get(0);
-  }
-
-  private List<File> createFiles(final String... fileNames) {
-    return SpArrayUtils.stream(fileNames)
-                       .map(f -> {
-                         File file = new File(DIR, f);
-                         try {
-                           FileUtils.touch(file);
-                         } catch (IOException e) {
-                           fail("Cannot create file: " + file.getAbsolutePath(), e);
-                         }
-                         return file;
-                       })
-                       .collect(Collectors.toList());
+  private void createSubDirs() {
+    createSubDirs(SUB_DIRS);
   }
 }

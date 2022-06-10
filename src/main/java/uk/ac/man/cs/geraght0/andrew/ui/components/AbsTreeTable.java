@@ -12,11 +12,11 @@ import javafx.scene.control.TreeTableView;
 import javafx.scene.control.cell.TreeItemPropertyValueFactory;
 import uk.ac.man.cs.geraght0.andrew.model.result.OperationResult;
 
-public abstract class AbsTreeTable<T> extends TreeTableView<OperationResult> {
+public abstract class AbsTreeTable<T> extends TreeTableView<OperationResult> {  //NOSONAR - the parent hierarchy allows for UI reuse
 
   protected TreeItem<OperationResult> root;
 
-  public AbsTreeTable(final HostServices hostServices) {
+  protected AbsTreeTable(final HostServices hostServices) {
     createContent(hostServices);
   }
 

@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration>
+  <include resource="org/springframework/boot/logging/logback/defaults.xml"/>
+  <include resource="org/springframework/boot/logging/logback/console-appender.xml"/>
+
+  <!--  <property name="LOGS" value="./logs" /> will be set in main() -->
+
+  <appender name="Console" class="ch.qos.logback.core.ConsoleAppender">
+    <layout class="ch.qos.logback.classic.PatternLayout">
+      <pattern>%clr(%d{${LOG_DATEFORMAT_PATTERN:-yyyy-MM-dd HH:mm:ss.SSS}}){faint} %clr(${LOG_LEVEL_PATTERN:-%5p}) %clr(${PID:- }){magenta} %clr(---){faint}
+        %clr([%25.25t]){faint} %clr(%-40.40logger{39}){cyan} %clr(:){faint} %m%n${LOG_EXCEPTION_CONVERSION_WORD:-%wEx}
+      </pattern>
+    </layout>
+  </appender>
+
+  <appender name="RollingFile" class="ch.qos.logback.core.rolling.RollingFileAppender">
+    <file>${LOGS}/folder-tools.log</file>
+    <encoder
+      class="ch.qos.logback.classic.encoder.PatternLayoutEncoder">
+      <pattern>%d{yyyy-MM-dd HH:mm:ss} | %-5level | ${PID} | %logger{40} | %25.25t | %msg%n</pattern>
+    </encoder>
+
+    <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
+      <!-- rollover daily and when the file reaches 10 MegaBytes -->
+      <fileNamePattern>${LOGS}/archived/folder-tools-%d{yyyy-MM-dd}.%i.log</fileNamePattern>
+      <maxFileSize>10MB</maxFileSize>
+      <maxHistory>7</maxHistory>
+      <totalSizeCap>500MB</totalSizeCap>
+    </rollingPolicy>
+  </appender>
+
+  <!-- LOG everything at INFO level -->
+  <root level="info">
+    <appender-ref ref="RollingFile"/>
+    <appender-ref ref="Console"/>
+  </root>
+
+  <!-- LOG "com.baeldung*" at TRACE level -->
+  <logger name="uk.ac.man.cs.geraght0.andrew" level="trace" additivity="false">
+    <appender-ref ref="RollingFile"/>
+    <appender-ref ref="Console"/>
+  </logger>
+
+</configuration>

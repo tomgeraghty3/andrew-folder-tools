@@ -21,7 +21,7 @@ import uk.ac.man.cs.geraght0.andrew.ui.components.CompWithCaption;
 import uk.ac.man.cs.geraght0.andrew.ui.components.DirCreateResultsTreeTbl;
 
 @Slf4j
-public abstract class AbsViewFolderFile<T> extends AbsView {
+public abstract class AbsViewFolderFile<T> extends AbsView {    //NOSONAR - the parent hierarchy allows for UI reuse
 
   //UI comps
   protected CompWithCaption<TextArea> txtDirInput;
@@ -37,7 +37,7 @@ public abstract class AbsViewFolderFile<T> extends AbsView {
   private EventHandler<MouseEvent> goClickEvent;
 
 
-  public AbsViewFolderFile(final UI ui) {
+  protected AbsViewFolderFile(final UI ui) {
     super(ui);
     this.isStandalone = true;     //By default
   }
@@ -93,7 +93,7 @@ public abstract class AbsViewFolderFile<T> extends AbsView {
 
   protected abstract String getCaptionForGoButton();
 
-  protected <T extends TreeTableView<OperationResult>> CompWithCaption<T> createTbl(String caption, final T tbl) {
+  protected <U extends TreeTableView<OperationResult>> CompWithCaption<U> createTbl(String caption, final U tbl) {
     tbl.setMaxHeight(500);
     tbl.setDisable(true);
     return new CompWithCaption<>(caption, tbl);
@@ -106,11 +106,7 @@ public abstract class AbsViewFolderFile<T> extends AbsView {
   }
 
   protected void restartResetOnClick() {
-    if (isResultsShow) {
-      resetUiToStart(false);
-    } else {
-      resetUiToStart(true);
-    }
+    resetUiToStart(!isResultsShow);
   }
 
   protected void setUiToResultsView(List<T> results) {

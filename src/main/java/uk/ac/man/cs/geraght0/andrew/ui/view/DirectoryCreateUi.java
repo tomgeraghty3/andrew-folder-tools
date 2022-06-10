@@ -14,13 +14,14 @@ import uk.ac.man.cs.geraght0.andrew.config.Config;
 import uk.ac.man.cs.geraght0.andrew.model.FolderCreateResult;
 import uk.ac.man.cs.geraght0.andrew.model.FoldersCreateRequestResult;
 import uk.ac.man.cs.geraght0.andrew.model.result.OperationResult;
+import uk.ac.man.cs.geraght0.andrew.service.FileFolderHelpers;
 import uk.ac.man.cs.geraght0.andrew.service.FolderService;
 import uk.ac.man.cs.geraght0.andrew.ui.UI;
 import uk.ac.man.cs.geraght0.andrew.ui.UiHelpers;
 import uk.ac.man.cs.geraght0.andrew.ui.components.DirChooserPanel;
 
 @Slf4j
-public class DirectoryCreateUi extends AbsViewFolderFile<FolderCreateResult> {
+public class DirectoryCreateUi extends AbsViewFolderFile<FolderCreateResult> {    //NOSONAR - the parent hierarchy allows for UI reuse
 
   private DirChooserPanel layDirChooser;
 
@@ -109,12 +110,17 @@ public class DirectoryCreateUi extends AbsViewFolderFile<FolderCreateResult> {
                                                 .entrySet()
                                                 .stream()
                                                 .filter(entry -> !StringUtils.isBlank(entry.getValue()))
-                                                .map(entry -> String.format("%s - files ending with \"%s\"", entry.getKey(), entry.getValue()))
+                                                .map(entry -> {
+                                                  String dir = FileFolderHelpers.mapDirWithContainerName(entry.getKey(), "[container]");
+                                                  return String.format("%s - files ending with \"%s\"", dir, entry.getValue());
+                                                })
+                                                .sorted()
                                                 .collect(Collectors.joining("\n"));
 
-          final String txt = String.format("The following containers were successfully created:\n%s\n\nPopulate these with files now. The next screen will " +
-                                           "organise any files into the configured folders:\n%s", dirsAsText, subDirs);
-          Optional<ButtonType> clickType = UiHelpers.showAlert(AlertType.CONFIRMATION, txt, ButtonType.NEXT, ButtonType.CANCEL);
+          final String txt = String.format("The following containers were successfully created:\n%s\n\n\nPopulate these with files now. The next screen will " +
+                                           "organise any files into the configured folders:\n\n%s", dirsAsText, subDirs);
+          Optional<ButtonType> clickType = UiHelpers.showAlert(AlertType.CONFIRMATION, txt, "Populate Containers With Files",
+                                                               ButtonType.NEXT, ButtonType.CANCEL);
           continueToNextView = clickType.isPresent() && clickType.get()
                                                                  .equals(ButtonType.NEXT);
         }
@@ -158,16 +164,6 @@ public class DirectoryCreateUi extends AbsViewFolderFile<FolderCreateResult> {
   @Override
   protected void onGoClick(final List<String> dirInput) {
     FolderService folderService = getBean(FolderService.class);
-    //Test
-//    final File dir = new File("C:\\Users\\Tom\\Desktop\\T");
-//    final List<FolderCreateResult> results = Lists.newArrayList(new FolderCreateResult(new OperationDirCreate(dir),
-//                                                                                       Lists.newArrayList(
-//                                                                                           new OperationFailure(dir, new IllegalStateException("Stub")),
-//                                                                                           new OperationNotNeeded(dir),
-//                                                                                           new OperationNotApplicable(dir),
-//                                                                                           new OperationSkipped(dir, OperationSkipped.DIR_NOT_CREATED),
-//                                                                                           new OperationMove(dir, dir))));
-//    FoldersCreateRequestResult result = new FoldersCreateRequestResult(null, null, results);
     FoldersCreateRequestResult result = folderService.createDirectories(layDirChooser.getChosenDirectory(), dirInput);
     Platform.runLater(() -> {
       setUiToResultsView(result.getDirectories());

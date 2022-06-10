@@ -5,7 +5,7 @@ import javafx.application.HostServices;
 import uk.ac.man.cs.geraght0.andrew.model.FolderCreateResult;
 import uk.ac.man.cs.geraght0.andrew.model.result.OperationResult;
 
-public class DirCreateResultsTreeTbl extends AbsTreeTable<FolderCreateResult> {
+public class DirCreateResultsTreeTbl extends AbsTreeTable<FolderCreateResult> { //NOSONAR - the parent hierarchy allows for UI reuse
 
   public DirCreateResultsTreeTbl(final HostServices hostServices) {
     super(hostServices);
