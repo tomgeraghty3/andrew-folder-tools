@@ -14,10 +14,7 @@ import org.springframework.context.support.PropertySourcesPlaceholderConfigurer;
 @Configuration
 @ConditionalOnMissingBean(ConfigBasedOnAppVersionConfigurer.class)
 @ConditionalOnProperty(value = "spring.config.use-config-version", havingValue = "true", matchIfMissing = true)
-public class ConfigBasedOnConfigVersionConfigurer implements ConfigConfigurer {
-
-  private ConfigBasedOnConfigVersionConfigurer() {
-  }
+public class ConfigBasedOnConfigVersionConfigurer implements ConfigConfigurer {//NOSONAR - needs public otherwise Spring produces "No visible constructors" err
 
   public static final String CONFIG_VERSION = "1.0";
 
