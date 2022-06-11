@@ -4,8 +4,11 @@ import static org.springframework.util.ResourceUtils.CLASSPATH_URL_PREFIX;
 import static uk.ac.man.cs.geraght0.andrew.constants.UiConstants.HEIGHT_OVERALL;
 import static uk.ac.man.cs.geraght0.andrew.constants.UiConstants.WIDTH_OVERALL;
 
+import java.io.File;
+import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
@@ -58,18 +61,18 @@ public class UI extends Application {
   @SneakyThrows
   @Override
   public void init() {
-    String[] args = getParameters().getRaw()
-                                   .toArray(new String[0]);
+    final String[] args = getParameters().getRaw()
+                                         .toArray(new String[0]);
     try {
       this.applicationContext =
           new SpringApplicationBuilder()
               .sources(AndrewFolderToolApplication.class)
               .web(WebApplicationType.NONE)
               .run(args);
-    } catch (Exception e) {
+    } catch (final Exception e) {
       final Runnable showDialog = () -> UiHelpers.alertError("The application cannot start: " + e.getMessage());
 
-      FutureTask<Void> showDialogTask = new FutureTask<>(showDialog, null);
+      final FutureTask<Void> showDialogTask = new FutureTask<>(showDialog, null);
       Platform.runLater(showDialogTask);
       showDialogTask.get();
       throw e;
@@ -89,25 +92,25 @@ public class UI extends Application {
     log.info("Application stopped");
   }
 
-  public <B> B getBean(Class<B> beanClass) {
+  public <B> B getBean(final Class<B> beanClass) {
     return applicationContext.getBean(beanClass);
   }
 
   @Override
-  public void start(Stage primaryStage) throws Exception {
-    Scene scene = generateScene();
+  public void start(final Stage primaryStage) throws Exception {
+    final Scene scene = generateScene();
 
     //Populate with default view
-    UiMode modeToDisplay;
+    final UiMode modeToDisplay;
     if (getBean(Config.class).isDisablePasswordProtect()) {
       modeToDisplay = UiMode.BOTH;
     } else {
       modeToDisplay = UiMode.PASSWORD_PROTECT;
     }
-    AbsView view = modeToDisplay.createView(this);
+    final AbsView view = modeToDisplay.createView(this);
     populateView(view);
 
-    URL resource = ResourceUtils.getURL(String.format("%sstyle.css", CLASSPATH_URL_PREFIX));
+    final URL resource = ResourceUtils.getURL(String.format("%sstyle.css", CLASSPATH_URL_PREFIX));
     scene.getStylesheets()
          .addAll(resource.toExternalForm());
 
@@ -123,12 +126,12 @@ public class UI extends Application {
 
     executorService.submit(() -> Platform.runLater(() -> {
       //Check for newer version
-      Optional<String> newVersion = getBean(Backend.class).checkForNewerVersion();
+      final Optional<String> newVersion = getBean(Backend.class).checkForNewerVersion();
       newVersion.ifPresent(version -> {
         log.info("A new version was detected at \"{}\". Asking the user if they would like to visit that webpage", version);
-        Optional<ButtonType> button = UiHelpers.showAlert(AlertType.WARNING, "A new version of the application was found. Do you want to open " +
-                                                                             "GitHub to download the new version?", "New version found",
-                                                          ButtonType.YES, ButtonType.NO);
+        final Optional<ButtonType> button = UiHelpers.showAlert(AlertType.WARNING, "A new version of the application was found. Do you want to open " +
+                                                                                   "GitHub to download the new version?", "New version found",
+                                                                ButtonType.YES, ButtonType.NO);
         if (button.isPresent()) {
           log.info("The user clicked button: \"{}\"", button.get()
                                                             .getText());
@@ -145,20 +148,20 @@ public class UI extends Application {
     root = new StackPane();
     root.setAlignment(Pos.CENTER);
     createMenu();
-    VBox mainLayout = new VBox(menuBar, root);
+    final VBox mainLayout = new VBox(menuBar, root);
     return new Scene(mainLayout, WIDTH_OVERALL, HEIGHT_OVERALL);
   }
 
   private void createMenu() {
-    Menu menu = new Menu("Switch App Mode");
+    final Menu menu = new Menu("Switch App Mode");
 
-    ToggleGroup toggleGroup = new ToggleGroup();
+    final ToggleGroup toggleGroup = new ToggleGroup();
     final Map<Toggle, UiMode> map = new HashMap<>();
     final UiMode[] modes = UiMode.values();
     Toggle itemToSelect = null;
-    for (UiMode mode : modes) {
+    for (final UiMode mode : modes) {
       if (mode.isDisplayInMenu()) {
-        RadioMenuItem item = new RadioMenuItem(mode.getDisplayName());
+        final RadioMenuItem item = new RadioMenuItem(mode.getDisplayName());
         map.put(item, mode);
         toggleGroup.getToggles()
                    .add(item);
@@ -174,25 +177,63 @@ public class UI extends Application {
     toggleGroup.selectToggle(itemToSelect);
     toggleGroup.selectedToggleProperty()
                .addListener((o, oldValue, newValue) -> {
-                 UiMode mode = map.get(newValue);
-                 UiMode old = map.get(oldValue);
+                 final UiMode mode = map.get(newValue);
+                 final UiMode old = map.get(oldValue);
                  log.info("Changing view to mode {} from {}", mode, old);
-                 AbsView view = mode.createView(this);
+                 final AbsView view = mode.createView(this);
                  populateView(view);
                });
 
-    MenuItem menuItem = new MenuItem("Populate with last used values");
-    Menu menuOptions = new Menu("Options", null, menuItem);
-    menuItem.setOnAction(e -> {
+    final MenuItem menuPopLastUsed = new MenuItem("Populate with last used values");
+    final MenuItem menuOpenConfig = new MenuItem("Open configuration file");
+    final MenuItem menuOpenConfigDir = new MenuItem("Open configuration file directory");
+    final MenuItem menuOpenLogDir = new MenuItem("Open log file directory");
+    final Menu menuOptions = new Menu("Options", null, menuPopLastUsed, menuOpenConfig, menuOpenConfigDir, menuOpenLogDir);
+    menuPopLastUsed.setOnAction(e -> {
       try {
         currentView.populateFromConfig();
         UiHelpers.showAlert(AlertType.INFORMATION, "Populated with last values used (if any)");
-      } catch (Exception ex) {
+      } catch (final Exception ex) {
         UiHelpers.alertError("Failed to populate with the last used values: " + ex.getMessage());
       }
     });
+    menuOpenConfig.setOnAction(e -> {
+      final String path = Config.getPropertiesFile()
+                                .getAbsolutePath();
+      runProgram("configuration file", "notepad", path);
+    });
+
+    menuOpenConfigDir.setOnAction(e -> {
+      final String path = Config.getPropertiesFile()
+                                .getParentFile()
+                                .getAbsolutePath();
+      runProgram("configuration file directory", "explorer", path);
+    });
+    menuOpenLogDir.setOnAction(e -> {
+      final String path = new File(AndrewFolderToolApplication.LOG_DIR).getAbsolutePath();
+      runProgram("log file directory", "explorer", path);
+    });
 
     menuBar = new MenuBar(menu, menuOptions);
+  }
+
+  private void runProgram(final String description, final String... commands) {
+    log.debug("Attempting to run {}", Arrays.toString(commands));
+    final String name = System.getProperty("os.name")
+                              .toLowerCase();
+    if (!name.contains("win")) {
+      UiHelpers.alertError("Sorry this feature is only available on Windows");
+    } else {
+      final ProcessBuilder pb = new ProcessBuilder(commands);
+      try {
+        final Process process = pb.start();
+        log.info("Opened {}. Process: {}", description, process);
+      } catch (final IOException ex) {
+        final String msg = String.format("Could not open %s. Error: %s", description, ex.getMessage());
+        UiHelpers.alertError(msg);
+        log.error(msg, ex);
+      }
+    }
   }
 
   public void populateView(final AbsView view) {

@@ -19,14 +19,15 @@ import uk.ac.man.cs.geraght0.andrew.ui.UI;
 @SpringBootApplication
 public class AndrewFolderToolApplication {
 
-  public static void main(String[] args) {
-    String logDir = String.format("%s", AppDirsFactory.getInstance()
-                                                      .getSiteDataDir(APP_NAME, CONFIG_VERSION, APP_AUTHOR));
-    System.setProperty("LOGS", logDir);
-    System.out.println("Setting log directory to: " + logDir);      //NOSONAR this is to print the log path before SLF4J has instantiated
+  public static final String LOG_DIR = String.format("%s", AppDirsFactory.getInstance()
+                                                                         .getSiteDataDir(APP_NAME, CONFIG_VERSION, APP_AUTHOR));
+
+  public static void main(final String[] args) {
+    System.setProperty("LOGS", LOG_DIR);
+    System.out.println("Setting log directory to: " + LOG_DIR);     //NOSONAR this is to print the log path before SLF4J has instantiated
     try {
       Application.launch(UI.class, args);
-    } catch (Exception e) {
+    } catch (final Exception e) {
       log.error("Couldn't start the Spring application context", e);
     }
   }
