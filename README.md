@@ -1,6 +1,6 @@
 # Config
 
-Exists in `C:\ProgramData\GERAGHT0\ANDREW_TOOLS\1.0\folder-tool.properties`
+Exists in `C:\ProgramData\GERAGHT0\ANDREW_TOOLS\1.0\folder-tool.properties` (but also note, there is now an option in the UI under the "Option" menu to open this file directly)
 
 User configuration options:
 
