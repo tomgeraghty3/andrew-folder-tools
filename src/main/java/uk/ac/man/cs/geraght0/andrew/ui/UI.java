@@ -188,7 +188,8 @@ public class UI extends Application {
     final MenuItem menuOpenConfig = new MenuItem("Open configuration file");
     final MenuItem menuOpenConfigDir = new MenuItem("Open configuration file directory");
     final MenuItem menuOpenLogDir = new MenuItem("Open log file directory");
-    final Menu menuOptions = new Menu("Options", null, menuPopLastUsed, menuOpenConfig, menuOpenConfigDir, menuOpenLogDir);
+    final MenuItem menuDisplayVersion = new MenuItem("Display version");
+    final Menu menuOptions = new Menu("Options", null, menuPopLastUsed, menuOpenConfig, menuOpenConfigDir, menuOpenLogDir, menuDisplayVersion);
     menuPopLastUsed.setOnAction(e -> {
       try {
         currentView.populateFromConfig();
@@ -212,6 +213,14 @@ public class UI extends Application {
     menuOpenLogDir.setOnAction(e -> {
       final String path = new File(AndrewFolderToolApplication.LOG_DIR).getAbsolutePath();
       runProgram("log file directory", "explorer", path);
+    });
+
+    menuDisplayVersion.setOnAction(e -> {
+      final Backend b = getBean(Backend.class);
+      final String version = b.getBuildProperties()
+                              .getVersion();
+      UiHelpers.showAlert(AlertType.INFORMATION, String.format("Running version %s of %s", version, b.getBuildProperties()
+                                                                                                     .getArtifact()), "Version Information");
     });
 
     menuBar = new MenuBar(menu, menuOptions);
