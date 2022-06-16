@@ -188,13 +188,21 @@ public class UI extends Application {
                  populateView(view);
                });
 
-    //TODO menu for seeing what the thing is ...
+    final MenuItem menuSeeConfiguredRules = new MenuItem("See file organise rules");
     final MenuItem menuPopLastUsed = new MenuItem("Populate with last used values");
     final MenuItem menuOpenConfig = new MenuItem("Open configuration file");
     final MenuItem menuOpenConfigDir = new MenuItem("Open configuration file directory");
     final MenuItem menuOpenLogDir = new MenuItem("Open log file directory");
     final MenuItem menuDisplayVersion = new MenuItem("Display version");
-    final Menu menuOptions = new Menu("Options", null, menuPopLastUsed, menuOpenConfig, menuOpenConfigDir, menuOpenLogDir, menuDisplayVersion);
+    final Menu menuOptions = new Menu("Options", null, menuSeeConfiguredRules, menuPopLastUsed, menuOpenConfig, menuOpenConfigDir, menuOpenLogDir,
+                                      menuDisplayVersion);
+
+    menuSeeConfiguredRules.setOnAction(e -> {
+      final String rules = UiHelpers.getFileOrganiseFulesAsFriendlyString(getBean(Config.class));
+      final String txt = String.format("The following rules for organising files are shown below:\n\n%s", rules);
+      UiHelpers.showAlert(AlertType.INFORMATION, txt, "File organise rules");
+    });
+
     menuPopLastUsed.setOnAction(e -> {
       try {
         currentView.populateFromConfig();

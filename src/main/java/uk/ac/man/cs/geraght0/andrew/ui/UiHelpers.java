@@ -3,6 +3,7 @@ package uk.ac.man.cs.geraght0.andrew.ui;
 import com.sun.javafx.scene.control.behavior.TextAreaBehavior;
 import com.sun.javafx.scene.control.skin.TextAreaSkin;
 import java.util.Optional;
+import java.util.stream.Collectors;
 import javafx.application.Platform;
 import javafx.scene.control.Alert;
 import javafx.scene.control.Alert.AlertType;
@@ -14,7 +15,9 @@ import javafx.scene.input.KeyEvent;
 import javafx.scene.layout.Region;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
+import uk.ac.man.cs.geraght0.andrew.config.Config;
 import uk.ac.man.cs.geraght0.andrew.constants.UiConstants;
+import uk.ac.man.cs.geraght0.andrew.service.FileFolderHelpers;
 
 public class UiHelpers {
 
@@ -99,5 +102,19 @@ public class UiHelpers {
         event.consume();
       }
     });
+  }
+
+  public static String getFileOrganiseFulesAsFriendlyString(Config config) {
+    return config.getDirectoryToFilenameFilter()
+                 .stream()
+                 .filter(entry -> !StringUtils.isBlank(entry.getEndsWith()))
+                 .map(entry -> {
+                   String dir = FileFolderHelpers.mapDirWithContainerName(entry.getDirToMoveTo(), "[container]");
+                   return entry.getContainsOp()
+                               .map(s -> String.format("%s - files of type \"%s\" and containing the word \"%s\"",
+                                                       dir, entry.getEndsWith(), s))
+                               .orElse(String.format("%s - any other files of type \"%s\"", dir, entry.getEndsWith()));
+                 })
+                 .collect(Collectors.joining("\n"));
   }
 }

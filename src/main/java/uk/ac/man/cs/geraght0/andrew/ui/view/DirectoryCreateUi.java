@@ -14,7 +14,6 @@ import uk.ac.man.cs.geraght0.andrew.config.Config;
 import uk.ac.man.cs.geraght0.andrew.model.FolderCreateResult;
 import uk.ac.man.cs.geraght0.andrew.model.FoldersCreateRequestResult;
 import uk.ac.man.cs.geraght0.andrew.model.result.OperationResult;
-import uk.ac.man.cs.geraght0.andrew.service.FileFolderHelpers;
 import uk.ac.man.cs.geraght0.andrew.service.FolderService;
 import uk.ac.man.cs.geraght0.andrew.ui.UI;
 import uk.ac.man.cs.geraght0.andrew.ui.UiHelpers;
@@ -106,19 +105,7 @@ public class DirectoryCreateUi extends AbsViewFolderFileTextArea<FolderCreateRes
         boolean popupDisabled = getBean(Config.class).isDisableInfoPopupBetweenViews();
         boolean continueToNextView = popupDisabled;
         if (!popupDisabled) {
-          String subDirs = getBean(Config.class).getDirectoryToFilenameFilter()
-                                                .stream()
-                                                .filter(entry -> !StringUtils.isBlank(entry.getEndsWith()))
-                                                .map(entry -> {
-                                                  String dir = FileFolderHelpers.mapDirWithContainerName(entry.getDirToMoveTo(), "[container]");
-                                                  return String.format("%s - files ending with \"%s\"%s", dir, entry.getEndsWith(),
-                                                                       entry.getContainsOp()
-                                                                            .map(s -> " and containing " + s)
-                                                                            .orElse(""));
-                                                })
-                                                .sorted()
-                                                .collect(Collectors.joining("\n"));
-
+          String subDirs = UiHelpers.getFileOrganiseFulesAsFriendlyString(getBean(Config.class));
           final String txt = String.format("The following containers were successfully created:\n%s\n\n\nPopulate these with files now. The next screen will " +
                                            "organise any files into the configured folders:\n\n%s", dirsAsText, subDirs);
           Optional<ButtonType> clickType = UiHelpers.showAlert(AlertType.CONFIRMATION, txt, "Populate Containers With Files",
