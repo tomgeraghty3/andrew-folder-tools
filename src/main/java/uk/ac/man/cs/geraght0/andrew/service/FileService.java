@@ -5,7 +5,6 @@ import com.iberdrola.dtp.util.SpCollectionUtils;
 import com.iberdrola.dtp.util.SpNumberUtils;
 import java.io.File;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -60,32 +59,42 @@ public class FileService {
    * and a {@link OperationResult} for each file in the specified directory
    */
   public FilesOrganiseResult organiseFiles(File dirWithFiles) {
+    return organiseFiles(dirWithFiles, dirWithFiles.getName());
+  }
+
+
+  public FilesOrganiseResult organiseFiles(final File dirWithFiles, final String containerName) {
     log.info("Received a request to organise all files within directory \"{}\"", dirWithFiles.getAbsolutePath());
 
     //TODO dirWithFailes null?
 
     //Handle files
-    List<String> subDirectories = config.deduceSubDirectoryNames(dirWithFiles.getName());        //TODO if empty?
     List<OperationResult> fileResults;
     FolderCreateResult folderCreateResult;
     File[] files = dirWithFiles.listFiles(f -> !f.isDirectory());
     if (files == null || files.length == 0) {
       log.info("No files present in the directory - nothing to organise");
-      fileResults = Collections.emptyList();
-      folderCreateResult = FileFolderHelpers.createResultWhenSkippedAsOrganiseDirIsEmpty(dirWithFiles, subDirectories);
+      throw handleNoFiles(dirWithFiles);
+//      fileResults = Collections.emptyList();
+//      folderCreateResult = FileFolderHelpers.createResultWhenSkippedAsOrganiseDirIsEmpty(dirWithFiles, subDirectories);
     } else {
       //Populate any missing subdirectories
+      List<String> subDirectories = config.deduceSubDirectoryNames(containerName);        //TODO if empty?
       log.info("Checking directory and any missing subdirectories: {}", subDirectories);
       folderCreateResult = folderService.handleDirAndSubDirs(dirWithFiles, subDirectories);
 
       log.info("Organising {}", SpNumberUtils.descCount(files.length, "file"));
       fileResults = SpArrayUtils.stream(files)
-                                .map(f -> organiseFile(f, dirWithFiles.getName()))
+                                .map(f -> organiseFile(f, containerName))
                                 .collect(Collectors.toList());
       log.info(FileFolderHelpers.generateOperationResultsLog("File organisation results:", fileResults));
     }
 
     return new FilesOrganiseResult(dirWithFiles, folderCreateResult, fileResults);
+  }
+
+  RuntimeException handleNoFiles(final File dirWithFiles) {
+    return new IllegalArgumentException(String.format("Root directory \"%s\" has no files to organise", dirWithFiles.getName()));
   }
 
   private OperationResult organiseFile(final File file, final String containerName) {

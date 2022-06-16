@@ -1,30 +1,26 @@
 package uk.ac.man.cs.geraght0.andrew.ui.view;
 
 import com.google.common.collect.Lists;
-import com.iberdrola.dtp.util.SpArrayUtils;
 import java.util.List;
-import java.util.stream.Collectors;
 import javafx.event.EventHandler;
 import javafx.scene.Node;
 import javafx.scene.control.Button;
-import javafx.scene.control.TextArea;
+import javafx.scene.control.TextInputControl;
 import javafx.scene.control.TreeTableView;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.BorderPane;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang3.StringUtils;
 import uk.ac.man.cs.geraght0.andrew.config.Config;
 import uk.ac.man.cs.geraght0.andrew.model.result.OperationResult;
 import uk.ac.man.cs.geraght0.andrew.ui.UI;
-import uk.ac.man.cs.geraght0.andrew.ui.UiHelpers;
 import uk.ac.man.cs.geraght0.andrew.ui.components.CompWithCaption;
 import uk.ac.man.cs.geraght0.andrew.ui.components.DirCreateResultsTreeTbl;
 
 @Slf4j
-public abstract class AbsViewFolderFile<T> extends AbsView {    //NOSONAR - the parent hierarchy allows for UI reuse
+public abstract class AbsViewFolderFile<T, C extends TextInputControl> extends AbsView {    //NOSONAR - the parent hierarchy allows for UI reuse
 
   //UI comps
-  protected CompWithCaption<TextArea> txtDirInput;
+  protected CompWithCaption<C> txtDirInput;
   protected CompWithCaption<DirCreateResultsTreeTbl> tblDirResults;
   protected Button btnRestartOrReset;
   protected Button btnGo;
@@ -71,9 +67,7 @@ public abstract class AbsViewFolderFile<T> extends AbsView {    //NOSONAR - the 
   }
 
   protected void createUiComponents() {
-    final TextArea txtDirNames = new TextArea();
-    txtDirNames.setMaxHeight(75);
-    UiHelpers.addTabKeyNavigationBehaviourToTextArea(txtDirNames);
+    final C txtDirNames = generateTextInputComponent();
     txtDirInput = new CompWithCaption<>(getCaptionForDirInput(), txtDirNames);
 
     //Output
@@ -86,6 +80,8 @@ public abstract class AbsViewFolderFile<T> extends AbsView {    //NOSONAR - the 
     layButtons.setLeft(btnRestartOrReset);
     layButtons.setRight(btnGo);
   }
+
+  protected abstract C generateTextInputComponent();
 
   protected abstract String getCaptionForDirInput();
 
@@ -148,17 +144,14 @@ public abstract class AbsViewFolderFile<T> extends AbsView {    //NOSONAR - the 
       } catch (Exception e) {
         log.error("Error updating config - continuing. Error: ", e);
       }
-      String text = txtDirInput.get()
-                               .getText();
-      List<String> dirInput = StringUtils.isBlank(text) ? null : SpArrayUtils.stream(text.split("\n"))
-                                                                             .collect(Collectors.toList());
-      onGoClick(dirInput);
+      onGoClick();
     });
   }
 
+  protected abstract void onGoClick();
+
   protected abstract void updateConfig(final Config config);
 
-  protected abstract void onGoClick(final List<String> dirInput);
 
   public void configureUiForResults(boolean resultsOnShow) {
     disable(resultsOnShow, txtDirInput);

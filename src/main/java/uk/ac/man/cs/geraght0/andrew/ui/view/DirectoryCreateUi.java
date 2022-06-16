@@ -21,7 +21,7 @@ import uk.ac.man.cs.geraght0.andrew.ui.UiHelpers;
 import uk.ac.man.cs.geraght0.andrew.ui.components.DirChooserPanel;
 
 @Slf4j
-public class DirectoryCreateUi extends AbsViewFolderFile<FolderCreateResult> {    //NOSONAR - the parent hierarchy allows for UI reuse
+public class DirectoryCreateUi extends AbsViewFolderFileTextArea<FolderCreateResult> {    //NOSONAR - the parent hierarchy allows for UI reuse
 
   private DirChooserPanel layDirChooser;
 
@@ -107,12 +107,14 @@ public class DirectoryCreateUi extends AbsViewFolderFile<FolderCreateResult> {  
         boolean continueToNextView = popupDisabled;
         if (!popupDisabled) {
           String subDirs = getBean(Config.class).getDirectoryToFilenameFilter()
-                                                .entrySet()
                                                 .stream()
-                                                .filter(entry -> !StringUtils.isBlank(entry.getValue()))
+                                                .filter(entry -> !StringUtils.isBlank(entry.getEndsWith()))
                                                 .map(entry -> {
-                                                  String dir = FileFolderHelpers.mapDirWithContainerName(entry.getKey(), "[container]");
-                                                  return String.format("%s - files ending with \"%s\"", dir, entry.getValue());
+                                                  String dir = FileFolderHelpers.mapDirWithContainerName(entry.getDirToMoveTo(), "[container]");
+                                                  return String.format("%s - files ending with \"%s\"%s", dir, entry.getEndsWith(),
+                                                                       entry.getContainsOp()
+                                                                            .map(s -> " and containing " + s)
+                                                                            .orElse(""));
                                                 })
                                                 .sorted()
                                                 .collect(Collectors.joining("\n"));

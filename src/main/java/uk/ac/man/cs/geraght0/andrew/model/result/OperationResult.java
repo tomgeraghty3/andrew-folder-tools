@@ -11,7 +11,7 @@ import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 
 @Getter
-public abstract class OperationResult {
+public abstract class OperationResult implements Comparable<OperationResult> {
 
   private final File location;
 
@@ -62,9 +62,9 @@ public abstract class OperationResult {
     Class<? extends OperationResult> clazz = getClass();
     Map<String, Object> variableNameToValue = generateToStringVariableMap();
     String variableString = variableNameToValue.entrySet()
-                                        .stream()
-                                        .map(e -> String.format("%s=%s", e.getKey(), e.getValue()))
-                                        .collect(Collectors.joining(", "));
+                                               .stream()
+                                               .map(e -> String.format("%s=%s", e.getKey(), e.getValue()))
+                                               .collect(Collectors.joining(", "));
     return String.format("%s(%s)", clazz.getSimpleName(), variableString);
   }
 
@@ -108,5 +108,10 @@ public abstract class OperationResult {
     ResultIcon(final String icon) {
       this.icon = icon;
     }
+  }
+
+  @Override
+  public int compareTo(final OperationResult o) {
+    return location.compareTo(o.getLocation());
   }
 }

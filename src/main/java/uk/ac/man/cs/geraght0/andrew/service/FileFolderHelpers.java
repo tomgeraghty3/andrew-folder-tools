@@ -6,10 +6,10 @@ import com.iberdrola.dtp.util.SpCollectionUtils;
 import java.io.File;
 import java.util.Collection;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import org.apache.commons.lang3.StringUtils;
+import uk.ac.man.cs.geraght0.andrew.model.DirectoryCriteria;
 import uk.ac.man.cs.geraght0.andrew.model.FolderCreateResult;
 import uk.ac.man.cs.geraght0.andrew.model.result.OperationFailure;
 import uk.ac.man.cs.geraght0.andrew.model.result.OperationResult;
@@ -31,20 +31,20 @@ public class FileFolderHelpers {
                             .collect(Collectors.toList());
   }
 
-  static Optional<String> isFileEligible(final Map<String, String> dirToPattern, final String containerName, final String filename) {
-    return dirToPattern.entrySet()
-                       .stream()
-                       .filter(e -> FileFolderHelpers.isFileMatchingPattern(e.getValue(), filename))
-                       .map(e -> FileFolderHelpers.mapDirWithContainerName(e.getKey(), containerName))
-                       .findFirst();
+  static Optional<String> isFileEligible(final List<DirectoryCriteria> directoryCriteria, final String containerName, final String filename) {
+    return directoryCriteria
+        .stream()
+        .filter(f -> FileFolderHelpers.isFileMatchingPattern(f.getEndsWith(), f.getContains(), filename))
+        .map(e -> FileFolderHelpers.mapDirWithContainerName(e.getDirToMoveTo(), containerName))
+        .findFirst();
   }
 
-  static boolean isFileMatchingPattern(final String pattern, final String filename) {
-    if (StringUtils.isBlank(pattern)) {
+  static boolean isFileMatchingPattern(final String endsWith, final String contains, final String filename) {
+    if (StringUtils.isBlank(endsWith)) {
       return false;
     }
 
-    return filename.endsWith(pattern);
+    return filename.endsWith(endsWith) && (contains == null || filename.contains(contains));
   }
 
   static FolderCreateResult createResultWhenDirCreateFailure(final File dir, final List<File> subDirs, final Throwable failure) {

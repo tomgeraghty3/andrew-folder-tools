@@ -1,5 +1,7 @@
 package uk.ac.man.cs.geraght0.andrew.ui.components;
 
+import com.google.common.collect.Lists;
+import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
@@ -12,7 +14,7 @@ import javafx.scene.control.TreeTableView;
 import javafx.scene.control.cell.TreeItemPropertyValueFactory;
 import uk.ac.man.cs.geraght0.andrew.model.result.OperationResult;
 
-public abstract class AbsTreeTable<T> extends TreeTableView<OperationResult> {  //NOSONAR - the parent hierarchy allows for UI reuse
+public abstract class AbsTreeTable<T extends Comparable<T>> extends TreeTableView<OperationResult> {  //NOSONAR - the parent hierarchy allows for UI reuse
 
   protected TreeItem<OperationResult> root;
 
@@ -61,10 +63,15 @@ public abstract class AbsTreeTable<T> extends TreeTableView<OperationResult> {  
 
   protected abstract String getNameOfFirstColumn();
 
+  public void populate(final T result) {
+    populate(Lists.newArrayList(result));
+  }
+
   public void populate(final List<T> result) {
     root.getChildren()
         .clear();
     if (result != null) {
+      Collections.sort(result);
       List<TreeItem<OperationResult>> items = result.stream()
                                                     .map(this::mapFilesOrganiseRequestResult)
                                                     .filter(Objects::nonNull)
@@ -83,6 +90,7 @@ public abstract class AbsTreeTable<T> extends TreeTableView<OperationResult> {  
     }
     List<TreeItem<OperationResult>> subTreeItems = subItems
         .stream()
+        .sorted()
         .map(TreeItem::new)
         .collect(Collectors.toList());
     dir.getChildren()

@@ -1,12 +1,14 @@
 package uk.ac.man.cs.geraght0.andrew.ui.view;
 
+import com.google.common.collect.Lists;
+import java.io.File;
 import java.util.List;
-import java.util.stream.Collectors;
 import javafx.application.Platform;
 import javafx.scene.Node;
 import javafx.scene.control.Tab;
 import javafx.scene.control.TabPane;
 import javafx.scene.control.TabPane.TabClosingPolicy;
+import javafx.scene.control.TextField;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import uk.ac.man.cs.geraght0.andrew.config.Config;
@@ -15,25 +17,27 @@ import uk.ac.man.cs.geraght0.andrew.model.FolderCreateResult;
 import uk.ac.man.cs.geraght0.andrew.service.FileService;
 import uk.ac.man.cs.geraght0.andrew.ui.UI;
 import uk.ac.man.cs.geraght0.andrew.ui.components.CompWithCaption;
+import uk.ac.man.cs.geraght0.andrew.ui.components.DirChooserPanel;
 import uk.ac.man.cs.geraght0.andrew.ui.components.FileOrganiseResultsTreeTbl;
 
 @Slf4j
-public class FileOrganiseUi extends AbsViewFolderFileTextArea<FilesOrganiseResult> {//NOSONAR - the parent hierarchy allows for UI reuse
+public class CreateAndOrganiseUi extends AbsViewFolderFile<FilesOrganiseResult, TextField> {//NOSONAR - the parent hierarchy allows for UI reuse
 
   //UI components
+  private DirChooserPanel layDirChooser;
   private CompWithCaption<FileOrganiseResultsTreeTbl> tblFileResults;
   private TabPane tabResults;
-  //State
-  private DirectoryCreateUi previousUi;
+  private TextField txtContainerName;
 
-  public FileOrganiseUi(final UI ui) {
+  public CreateAndOrganiseUi(final UI ui) {
     super(ui);
   }
 
   @Override
-  protected void build() {
-    super.build();
-    previousUi = null;
+  protected List<Node> getComponentsToToggleDisableDuringProgress() {
+    List<Node> list = super.getComponentsToToggleDisableDuringProgress();
+    list.add(layDirChooser);
+    return list;
   }
 
   @Override
@@ -45,6 +49,11 @@ public class FileOrganiseUi extends AbsViewFolderFileTextArea<FilesOrganiseResul
       txtDirInput.get()
                  .setText(dirs);
     }
+
+    String dir = config.getLastDirForDirCreate();
+    if (!StringUtils.isBlank(dir)) {
+      layDirChooser.populateSelectedDir(dir);
+    }
   }
 
   @Override
@@ -54,11 +63,18 @@ public class FileOrganiseUi extends AbsViewFolderFileTextArea<FilesOrganiseResul
     if (!StringUtils.isBlank(dirs)) {
       config.setLastDirsForFileOrganise(dirs);
     }
+
+    String dir = layDirChooser.getChosenDirectory() == null ? null : layDirChooser.getChosenDirectory()
+                                                                                  .getAbsolutePath();
+    if (!StringUtils.isBlank(dir)) {
+      config.setLastDirForDirCreate(dir);
+    }
   }
 
   @Override
-  protected Integer getIndexOfProgressBarPlacement() {
-    return super.getIndexOfProgressBarPlacement() - 1;
+  protected TextField generateTextInputComponent() {
+    txtContainerName = new TextField();
+    return txtContainerName;
   }
 
   @Override
@@ -70,7 +86,7 @@ public class FileOrganiseUi extends AbsViewFolderFileTextArea<FilesOrganiseResul
 
   @Override
   protected String getCaptionForDirInput() {
-    return "Directories to organise (one per line)";
+    return "Container name";
   }
 
   @Override
@@ -80,7 +96,7 @@ public class FileOrganiseUi extends AbsViewFolderFileTextArea<FilesOrganiseResul
 
   @Override
   protected String getCaptionForGoButton() {
-    return "Organise files in directories";
+    return "Create container and organise files";
   }
 
   @Override
@@ -91,6 +107,9 @@ public class FileOrganiseUi extends AbsViewFolderFileTextArea<FilesOrganiseResul
 
   @Override
   protected void createViewSpecificUiComponents() {
+    //Input
+    layDirChooser = new DirChooserPanel("Root Directory containing files to organise");
+
     //Output tab 1
     tblFileResults = createTbl("File organise results", new FileOrganiseResultsTreeTbl(getHostServices()));
     Tab tabFileResults = new Tab("View File Results", tblFileResults);
@@ -105,6 +124,7 @@ public class FileOrganiseUi extends AbsViewFolderFileTextArea<FilesOrganiseResul
   @Override
   protected void addComponentsToView() {
     //Add to grid
+    addToView(layDirChooser);
     addToView(txtDirInput);
     addToView(tabResults);
     addToView(layButtons);
@@ -116,23 +136,27 @@ public class FileOrganiseUi extends AbsViewFolderFileTextArea<FilesOrganiseResul
     if (clearDownValues) {
       tblFileResults.get()
                     .reset();
+      layDirChooser.reset();
     }
   }
 
   @Override
-  protected void onGoClick(final List<String> dirInput) {
+  protected void onGoClick() {
+    final File rootDir = layDirChooser.getChosenDirectory();
+    final String cn = txtContainerName.getText();
+    if (StringUtils.isBlank(cn)) {
+      throw new IllegalArgumentException("A Container name was not provided");
+    }
     final FileService fileService = getBean(FileService.class);
-    List<FilesOrganiseResult> results = fileService.organiseFiles(dirInput);
-    List<FolderCreateResult> dirResults = results.stream()
-                                                 .map(FilesOrganiseResult::getFolderCreateResult)
-                                                 .collect(Collectors.toList());
+    FilesOrganiseResult organiseResult = fileService.organiseFiles(rootDir, cn);
+    FolderCreateResult dirResult = organiseResult.getFolderCreateResult();
     Platform.runLater(() -> {
-      setUiToResultsView(results);
+      setUiToResultsView(Lists.newArrayList(organiseResult));
 
       tblDirResults.get()
-                   .populate(dirResults);
+                   .populate(dirResult);
       tblFileResults.get()
-                    .populate(results);
+                    .populate(organiseResult);
     });
   }
 
@@ -140,27 +164,6 @@ public class FileOrganiseUi extends AbsViewFolderFileTextArea<FilesOrganiseResul
   public void configureUiForResults(final boolean resultsOnShow) {
     super.configureUiForResults(resultsOnShow);
     disable(!resultsOnShow, tblFileResults);
-  }
-
-  public void prepareUiWhenNotStandalone(final String dirs, final DirectoryCreateUi directoryCreateUi) {
-    isStandalone = false;
-    this.previousUi = directoryCreateUi;
-    resetUiToStart(true);
-    btnRestartOrReset.setText("Back");
-    txtDirInput.get()
-               .setText(dirs);
-  }
-
-  @Override
-  protected void restartResetOnClick() {
-    if (isStandalone) {
-      super.restartResetOnClick();
-    } else {
-      log.info("Going back to the previous view");
-      parentUi.populateView(previousUi);
-      if (isResultsShow) {
-        previousUi.resetUiToStart(true);
-      }
-    }
+    disable(resultsOnShow, layDirChooser);
   }
 }

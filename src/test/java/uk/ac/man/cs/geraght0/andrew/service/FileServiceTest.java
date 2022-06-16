@@ -11,28 +11,29 @@ import static org.mockito.Mockito.when;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Collections;
-import java.util.LinkedHashMap;
 import java.util.List;
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.lang3.tuple.Pair;
 import org.assertj.core.util.Lists;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import uk.ac.man.cs.geraght0.andrew.config.Config;
 import uk.ac.man.cs.geraght0.andrew.constants.ErrorMessages;
+import uk.ac.man.cs.geraght0.andrew.model.DirectoryCriteria;
 import uk.ac.man.cs.geraght0.andrew.model.FilesOrganiseResult;
 import uk.ac.man.cs.geraght0.andrew.model.FolderCreateResult;
 import uk.ac.man.cs.geraght0.andrew.model.result.OperationFailure;
 import uk.ac.man.cs.geraght0.andrew.model.result.OperationResult;
-import uk.ac.man.cs.geraght0.andrew.model.result.OperationSkipped;
 
 class FileServiceTest extends AbsServiceTest<FileService> {
 
   private static final File SUB_DIR_ONE = new File(DIR, SUB_DIR_ONE_NAME);
   private static final File SUB_DIR_TWO = new File(DIR, SUB_DIR_TWO_NAME);
   private static final List<File> SUB_DIRS = Lists.newArrayList(SUB_DIR_ONE, SUB_DIR_TWO);
-  private static final String TXT_EXT = "txt";
-  private static final String FILENAME_END = "hello.data";
+  private static final Pair<String, String> TXT_EXT = Pair.of("txt", null);
+  private static final Pair<String, String> FILENAME_END = Pair.of("data", "hello");
 
   @Override
   protected FileService createClassUnderTestInstance(final Config config, final FileSystemService fileSystemService) {
@@ -76,17 +77,16 @@ class FileServiceTest extends AbsServiceTest<FileService> {
 
   @Test
   void testOrganise_whenDirEmpty_folderCreateSkipped() {
-    List<OperationResult> subDirResult = createSubDirsResult(DIR, f -> new OperationSkipped(f, OperationSkipped.DIR_EMPTY));
-    FolderCreateResult folderCreateResult = createFolderCreateResult(newOpSkipped(DIR, OperationSkipped.DIR_EMPTY), subDirResult);
-    final FilesOrganiseResult expected = new FilesOrganiseResult(DIR, folderCreateResult, Lists.newArrayList());
-
-    assertFileOrganisation(expected);
+    RuntimeException expected = classUnderTest.handleNoFiles(DIR);
+    assertThatThrownBy(() -> classUnderTest.organiseFiles(DIR))
+        .isInstanceOf(expected.getClass())
+        .hasMessage(expected.getMessage());
   }
 
   @Test
   void testOraganise_whenOneFileAndDirsNotExist_folderCreateResultPopulatedAndFileMoved() {
     //Create stub files
-    File file = createFile(String.format("tmp.%s", TXT_EXT));
+    File file = createFile(String.format("tmp.%s", TXT_EXT.getLeft()));
 
     //Mock
     mockFilenameFilters(TXT_EXT, null);
@@ -105,8 +105,8 @@ class FileServiceTest extends AbsServiceTest<FileService> {
   void testOraganise_whenFilesMatchAndDirsExist_filesMoved() {
     //Create stub files
     createSubDirs();
-    File fileOne = createFile(String.format("tmp.%s", TXT_EXT));
-    File fileTwo = createFile(String.format("other%s", FILENAME_END));
+    File fileOne = createFile(String.format("tmp.%s", TXT_EXT.getLeft()));
+    File fileTwo = createFile(String.format("other%s%s", FILENAME_END.getRight(), FILENAME_END.getLeft()));
 
     //Mock
     mockFilenameFilters(TXT_EXT, FILENAME_END);
@@ -125,8 +125,8 @@ class FileServiceTest extends AbsServiceTest<FileService> {
   void testOraganise_whenFilesMatchAndSomeDontAndDirsExist_someFilesMoved() {
     //Create stub files
     createSubDirs();
-    File fileOne = createFile(String.format("tmp.%s", TXT_EXT));
-    File fileTwo = createFile(String.format("other%s", FILENAME_END));
+    File fileOne = createFile(String.format("tmp.%s", TXT_EXT.getLeft()));
+    File fileTwo = createFile(String.format("other%s%s", FILENAME_END.getRight(), FILENAME_END.getLeft()));
     File fileThree = createFile("other-not-matching");
 
     //Mock
@@ -163,8 +163,8 @@ class FileServiceTest extends AbsServiceTest<FileService> {
     FileUtils.forceMkdir(SUB_DIR_TWO);
 
     //Create stub files
-    File fileOne = createFile(String.format("tmp.%s", TXT_EXT));
-    File fileTwo = createFile(String.format("other%s", FILENAME_END));
+    File fileOne = createFile(String.format("tmp.%s", TXT_EXT.getLeft()));
+    File fileTwo = createFile(String.format("other%s%s", FILENAME_END.getRight(), FILENAME_END.getLeft()));
     //Now create an already existing "fileOne" in SUB_DIR_TWO
     File fileAtDestPath = new File(SUB_DIR_TWO, fileOne.getName());
     FileUtils.touch(fileAtDestPath);
@@ -201,16 +201,18 @@ class FileServiceTest extends AbsServiceTest<FileService> {
     assertThat(actual).isEqualTo(expected);
   }
 
-  private void mockFilenameFilters(String dirOneFilter, String dirTwoFilter) {
+  private void mockFilenameFilters(Pair<String, String> dirOneFilter, Pair<String, String> dirTwoFilter) {
     mockFilenameFilters(config, dirOneFilter, dirTwoFilter);
   }
 
-  private void mockFilenameFilters(Config configInstance, String dirOneFilter, String dirTwoFilter) {
-    LinkedHashMap<String, String> map = new LinkedHashMap<>();
-    map.put(SUB_DIR_ONE_NAME, dirOneFilter == null ? "" : dirOneFilter);
-    map.put(SUB_DIR_TWO_NAME, dirTwoFilter == null ? "" : dirTwoFilter);
+  private void mockFilenameFilters(Config configInstance, Pair<String, String> dirOneFilter, Pair<String, String> dirTwoFilter) {
+    List<DirectoryCriteria> list = new ArrayList<>();
+    list.add(
+        new DirectoryCriteria(SUB_DIR_ONE_NAME, dirOneFilter == null ? "" : dirOneFilter.getLeft(), dirOneFilter == null ? null : dirOneFilter.getRight()));
+    list.add(
+        new DirectoryCriteria(SUB_DIR_TWO_NAME, dirTwoFilter == null ? "" : dirTwoFilter.getLeft(), dirTwoFilter == null ? null : dirTwoFilter.getRight()));
     lenient().when(configInstance.getDirectoryToFilenameFilter())
-             .thenReturn(map);
+             .thenReturn(list);
   }
 
   private void createSubDirs() {

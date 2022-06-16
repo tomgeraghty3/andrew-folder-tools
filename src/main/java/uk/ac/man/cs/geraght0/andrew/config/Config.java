@@ -6,9 +6,8 @@ import static uk.ac.man.cs.geraght0.andrew.constants.ConfigConstants.PREFIX;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.util.LinkedHashMap;
+import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 import java.util.Properties;
 import java.util.stream.Collectors;
 import javax.annotation.PostConstruct;
@@ -19,6 +18,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.util.DefaultPropertiesPersister;
+import uk.ac.man.cs.geraght0.andrew.model.DirectoryCriteria;
 import uk.ac.man.cs.geraght0.andrew.service.FileFolderHelpers;
 
 @Data
@@ -28,7 +28,7 @@ import uk.ac.man.cs.geraght0.andrew.service.FileFolderHelpers;
 public class Config {
 
   private static File propertiesFile;    //Set during initialisation of the application context (through ConfigConfigurer)
-  private static final Map<String, String> DIRECTORY_TO_FILENAME_FILTER;
+  private static final List<DirectoryCriteria> DIRECTORY_TO_FILENAME_FILTER;
 
   //Config values
   private boolean skipVersionUpdateCheck;
@@ -41,20 +41,22 @@ public class Config {
 
 
   static {
-    DIRECTORY_TO_FILENAME_FILTER = new LinkedHashMap<>();
     //The order here is very important:
-    DIRECTORY_TO_FILENAME_FILTER.put(String.format("tour/%s/o/videos", CN_PLACEHOLDER), "_preview.mp4");
-    DIRECTORY_TO_FILENAME_FILTER.put(String.format("paid/%s/o/videos", CN_PLACEHOLDER), ".mp4");
-    DIRECTORY_TO_FILENAME_FILTER.put(String.format("paid/%s/o/artwork", CN_PLACEHOLDER), "artwork_uncensored.jpg");
-    DIRECTORY_TO_FILENAME_FILTER.put(String.format("tour/%s/o/artwork", CN_PLACEHOLDER), "artwork.jpg");
-    DIRECTORY_TO_FILENAME_FILTER.put(String.format("paid/%s/o/gallery", CN_PLACEHOLDER), "uncensored.jpg");
-    DIRECTORY_TO_FILENAME_FILTER.put(String.format("tour/%s/o/gallery", CN_PLACEHOLDER), ".jpg");
+    DIRECTORY_TO_FILENAME_FILTER = new ArrayList<>();
+    DIRECTORY_TO_FILENAME_FILTER.add(new DirectoryCriteria(String.format("tour/%s/o/videos", CN_PLACEHOLDER), "mp4", "preview"));
+    DIRECTORY_TO_FILENAME_FILTER.add(new DirectoryCriteria(String.format("paid/%s/o/videos", CN_PLACEHOLDER), ".mp4"));
+    DIRECTORY_TO_FILENAME_FILTER.add(new DirectoryCriteria(String.format("paid/%s/o/artwork", CN_PLACEHOLDER), "jpg", "artwork-uncensored"));
+    DIRECTORY_TO_FILENAME_FILTER.add(new DirectoryCriteria(String.format("tour/%s/o/artwork", CN_PLACEHOLDER), "jpg", "artwork"));
+    DIRECTORY_TO_FILENAME_FILTER.add(new DirectoryCriteria(String.format("paid/%s/o/gallery", CN_PLACEHOLDER), "jpg", "uncensored"));
+    DIRECTORY_TO_FILENAME_FILTER.add(new DirectoryCriteria(String.format("tour/%s/o/gallery", CN_PLACEHOLDER), "jpg"));
+    log.info("Application configured with the following rules:\n{}", DIRECTORY_TO_FILENAME_FILTER.stream()
+                                                                                                 .map(Object::toString)
+                                                                                                 .collect(Collectors.joining("\n")));
   }
 
   public List<String> deduceSubDirectoryNames(String containerName) {
-    return DIRECTORY_TO_FILENAME_FILTER.keySet()
-                                       .stream()
-                                       .map(s -> FileFolderHelpers.mapDirWithContainerName(s, containerName))
+    return DIRECTORY_TO_FILENAME_FILTER.stream()
+                                       .map(f -> FileFolderHelpers.mapDirWithContainerName(f.getDirToMoveTo(), containerName))
                                        .collect(Collectors.toList());
   }
 
@@ -97,7 +99,7 @@ public class Config {
     return new FileOutputStream(propertiesFile);
   }
 
-  public Map<String, String> getDirectoryToFilenameFilter() {
+  public List<DirectoryCriteria> getDirectoryToFilenameFilter() {
     return DIRECTORY_TO_FILENAME_FILTER;
   }
 

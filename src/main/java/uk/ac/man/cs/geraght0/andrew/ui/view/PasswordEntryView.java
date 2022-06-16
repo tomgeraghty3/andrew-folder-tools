@@ -79,7 +79,7 @@ public class PasswordEntryView extends AbsView {  //NOSONAR - the parent hierarc
     } else {
       parentUi.getMenuBar()
               .setDisable(false);
-      final UiMode mode = UiMode.BOTH;
+      final UiMode mode = UiConstants.VIEW_TO_SHOW_AFTER_PASSWORD;
       log.info("Password valid. Loading application and populating view with mode: {}", mode);
       AbsView newView = mode.createView(parentUi);
       parentUi.populateView(newView);

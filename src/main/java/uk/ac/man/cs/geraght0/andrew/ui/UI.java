@@ -40,6 +40,7 @@ import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.util.ResourceUtils;
 import uk.ac.man.cs.geraght0.andrew.AndrewFolderToolApplication;
 import uk.ac.man.cs.geraght0.andrew.config.Config;
+import uk.ac.man.cs.geraght0.andrew.constants.UiConstants;
 import uk.ac.man.cs.geraght0.andrew.service.Backend;
 import uk.ac.man.cs.geraght0.andrew.ui.view.AbsView;
 import uk.ac.man.cs.geraght0.andrew.ui.view.UiMode;
@@ -78,7 +79,7 @@ public class UI extends Application {
       throw e;
     }
 
-    executorService = Executors.newSingleThreadExecutor();
+    executorService = Executors.newFixedThreadPool(2);
     TooltipsDefaultsFixer.setTooltipTimers(400, 10000, 200);
   }
 
@@ -103,7 +104,7 @@ public class UI extends Application {
     //Populate with default view
     final UiMode modeToDisplay;
     if (getBean(Config.class).isDisablePasswordProtect()) {
-      modeToDisplay = UiMode.BOTH;
+      modeToDisplay = UiConstants.VIEW_TO_SHOW_AFTER_PASSWORD;
     } else {
       modeToDisplay = UiMode.PASSWORD_PROTECT;
     }
@@ -124,24 +125,27 @@ public class UI extends Application {
     primaryStage.setScene(scene);
     primaryStage.show();
 
-    executorService.submit(() -> Platform.runLater(() -> {
+    executorService.submit(() -> {
       //Check for newer version
       final Optional<String> newVersion = getBean(Backend.class).checkForNewerVersion();
-      newVersion.ifPresent(version -> {
-        log.info("A new version was detected at \"{}\". Asking the user if they would like to visit that webpage", version);
-        final Optional<ButtonType> button = UiHelpers.showAlert(AlertType.WARNING, "A new version of the application was found. Do you want to open " +
-                                                                                   "GitHub to download the new version?", "New version found",
-                                                                ButtonType.YES, ButtonType.NO);
-        if (button.isPresent()) {
-          log.info("The user clicked button: \"{}\"", button.get()
-                                                            .getText());
-          if (button.get()
-                    .equals(ButtonType.YES)) {
-            getHostServices().showDocument(version);
-          }
-        }
-      });
-    }));
+      newVersion.ifPresent(version ->
+                               Platform.runLater(() -> {
+                                 log.info("A new version was detected at \"{}\". Asking the user if they would like to visit that webpage", version);
+                                 final Optional<ButtonType> button = UiHelpers.showAlert(AlertType.WARNING,
+                                                                                         "A new version of the application was found. Do you want to open " +
+                                                                                         "GitHub to download the new version?", "New version found",
+                                                                                         ButtonType.YES, ButtonType.NO);
+                                 if (button.isPresent()) {
+                                   log.info("The user clicked button: \"{}\"", button.get()
+                                                                                     .getText());
+                                   if (button.get()
+                                             .equals(ButtonType.YES)) {
+                                     getHostServices().showDocument(version);
+                                   }
+                                 }
+                               })
+      );
+    });
   }
 
   private Scene generateScene() {
@@ -184,6 +188,7 @@ public class UI extends Application {
                  populateView(view);
                });
 
+    //TODO menu for seeing what the thing is ...
     final MenuItem menuPopLastUsed = new MenuItem("Populate with last used values");
     final MenuItem menuOpenConfig = new MenuItem("Open configuration file");
     final MenuItem menuOpenConfigDir = new MenuItem("Open configuration file directory");

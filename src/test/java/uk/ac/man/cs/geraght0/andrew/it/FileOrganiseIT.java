@@ -31,7 +31,7 @@ class FileOrganiseIT extends AbsSpringBootTest {
     File artworkTour = createFile(topDirectory, "fileWith_artwork.jpg");
     File galleryTour = createFile(topDirectory, "fileWithoutArtworkInEnding.jpg");
     File videoPaid = createFile(topDirectory, "noPreviewEndingInName.mp4");
-    File artworkPaid = createFile(topDirectory, "fileWith_artwork_uncensored.jpg");
+    File artworkPaid = createFile(topDirectory, "fileWith_artwork-uncensored.jpg");
     File galleryPaid = createFile(topDirectory, "other-two-uncensored.jpg");
     File unmatchedFile = createFile(topDirectory, "_unmatched-file.txt");
 
@@ -45,7 +45,7 @@ class FileOrganiseIT extends AbsSpringBootTest {
     OperationNotApplicable unmatchedFileExpected = new OperationNotApplicable(unmatchedFile);
 
     //Ordered by name
-    final List<OperationResult> subDirOperations = Lists.newArrayList(galleryTourExpected, artworkTourExpected, artworkPaidExpected, videoPaidExpected,
+    final List<OperationResult> subDirOperations = Lists.newArrayList(galleryTourExpected, artworkPaidExpected, artworkTourExpected, videoPaidExpected,
                                                                       galleryPaidExpected, videoTourExpected, unmatchedFileExpected);
     FolderCreateResult folderCreateResult = new FolderCreateResult(new OperationNotNeeded(topDirectory), toSubDirFolderAsNotNeeded());
     FilesOrganiseResult expected = new FilesOrganiseResult(topDirectory, folderCreateResult, subDirOperations);

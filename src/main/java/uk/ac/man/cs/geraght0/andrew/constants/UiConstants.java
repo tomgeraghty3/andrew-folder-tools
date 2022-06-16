@@ -1,6 +1,10 @@
 package uk.ac.man.cs.geraght0.andrew.constants;
 
+import uk.ac.man.cs.geraght0.andrew.ui.view.UiMode;
+
 public class UiConstants {
+
+  public static final UiMode VIEW_TO_SHOW_AFTER_PASSWORD = UiMode.CREATE_AND_ORG;
 
   private UiConstants() {}
 
